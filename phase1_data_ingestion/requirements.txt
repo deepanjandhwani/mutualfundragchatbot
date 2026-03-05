@@ -1,0 +1,2 @@
+# Phase 1: Data ingestion
+playwright>=1.40.0

@@ -1,0 +1,46 @@
+# Run the data refresh pipeline (Phase 1 → 2 → 3) daily at 6 AM.
+# Default: 6 AM UTC. For 6 AM IST use: cron "30 0 * * *" (00:30 UTC = 06:00 IST).
+name: Daily data refresh (scheduler)
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    # Allow manual trigger from Actions tab
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright Chromium
+        run: python -m playwright install chromium
+
+      - name: Run scheduler pipeline (Phase 1 → 2 → 3)
+        run: python -m phase6_scheduler.run
+        env:
+          CI: "true"
+
+      - name: Upload pipeline artifacts (optional)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-output-${{ github.run_number }}
+          path: |
+            shared/last_refresh.json
+            phase1_data_ingestion/output/
+            phase2_processing/output/
+            phase3_embeddings/chroma_db/

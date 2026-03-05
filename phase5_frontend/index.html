@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HDFC Mutual Fund Facts — IndMoney</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    document.documentElement.setAttribute("data-theme", "dark");
+  </script>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-logos">
+        <div class="logo-wrap logo-wrap-combined">
+          <img src="assets/combined-logo.png" alt="HDFC Bank Money" class="logo logo-combined" />
+        </div>
+      </div>
+      <div class="header-titles">
+        <h1>Mutual Fund Facts</h1>
+        <p class="tagline-premium">Your guide to smarter mutual fund investing.</p>
+        <p class="disclaimer-risk">Mutual funds are subject to market risks. Read all scheme-related documents carefully.</p>
+        <p class="data-last-updated" id="data-last-updated" aria-live="polite"></p>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <details class="instructions-details" id="instructions-details">
+          <summary class="sidebar-summary">How it works</summary>
+          <section class="instructions">
+            <ul>
+              <li>Factual answers only (NAV, AUM, returns, holdings, etc.)</li>
+              <li>No advice or comparisons; short replies with sources</li>
+              <li>Rejects PII and opinion questions</li>
+            </ul>
+            <p class="instruction-ai">Responses are AI-generated. Please read the cited sources to verify before making any investment decision.</p>
+          </section>
+        </details>
+        <section class="funds-section">
+          <details class="funds-details" id="funds-details">
+            <summary class="sidebar-summary">Funds we answer about (8)</summary>
+            <ol class="fund-list">
+              <li>HDFC Large Cap Fund Direct Plan Growth</li>
+              <li>HDFC Flexi Cap Fund Direct Plan Growth</li>
+              <li>HDFC ELSS Tax Saver Direct Plan Growth</li>
+              <li>HDFC Nifty Next 50 Index Fund Direct Growth</li>
+              <li>HDFC Mid Cap Fund Direct Plan Growth</li>
+              <li>HDFC Housing Opportunities Fund Direct Growth</li>
+              <li>HDFC Nifty LargeMidcap 250 Index Fund Direct Growth</li>
+              <li>HDFC Large and Mid Cap Fund Direct Growth</li>
+            </ol>
+          </details>
+        </section>
+      </aside>
+
+      <main class="main">
+        <p class="banner-ai">Responses are AI-generated. Read the cited sources to verify before investing.</p>
+        <section class="welcome">
+          <p>Ask a factual question. Try an example or type your own.</p>
+          <div class="example-questions">
+            <button type="button" class="example-btn" data-query="What is the NAV of HDFC Large Cap?">NAV of HDFC Large Cap?</button>
+            <button type="button" class="example-btn" data-query="AUM of HDFC Flexi Cap Fund?">AUM of HDFC Flexi Cap?</button>
+            <button type="button" class="example-btn" data-query="Expense ratio of HDFC ELSS?">Expense ratio of HDFC ELSS?</button>
+          </div>
+        </section>
+
+        <section class="chat" aria-live="polite">
+          <div id="messages" class="messages"></div>
+          <form id="chat-form" class="input-row">
+            <input
+              id="message-input"
+              type="text"
+              placeholder="Ask a factual question..."
+              autocomplete="off"
+              aria-label="Your question"
+            />
+            <button type="submit" id="send-btn">Send</button>
+          </form>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    (function() {
+      function setMobileSidebar() {
+        var mobile = window.innerWidth <= 768;
+        var instructions = document.getElementById("instructions-details");
+        var funds = document.getElementById("funds-details");
+        if (!instructions || !funds) return;
+        if (mobile) {
+          instructions.removeAttribute("open");
+          funds.removeAttribute("open");
+        } else {
+          instructions.setAttribute("open", "");
+          funds.removeAttribute("open");
+        }
+      }
+      setMobileSidebar();
+      window.addEventListener("resize", setMobileSidebar);
+    })();
+  </script>
+</body>
+</html>

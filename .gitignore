@@ -1,0 +1,35 @@
+# Environment and secrets
+.env
+.env.local
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# ChromaDB
+phase3_embeddings/chroma_db/
+
+# Hugging Face / sentence-transformers cache (large; not committed; bake into image at deploy)
+.cache/
+
+# Phase outputs (optional: remove if you want to track sample data)
+phase1_data_ingestion/output/
+phase2_processing/output/
+
+# Phase 6: written by scheduler after pipeline run (frontend last_updated)
+shared/last_refresh.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

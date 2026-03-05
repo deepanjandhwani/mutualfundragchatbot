@@ -1,0 +1,12 @@
+# IndMoney RAG Chatbot - Root dependencies
+# Phase-specific requirements may add more
+
+playwright>=1.40.0
+chromadb>=0.4.0
+sentence-transformers>=2.2.0
+fastapi>=0.104.0
+uvicorn>=0.24.0
+groq>=0.4.0
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+apscheduler>=3.10.0
