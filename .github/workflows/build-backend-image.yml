@@ -1,0 +1,40 @@
+# Build backend Docker image and push to GHCR.
+# Railway can deploy from this image instead of building from source (much faster deploys).
+name: Build backend image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Dockerfile'
+      - 'requirements-railway.txt'
+      - 'shared/**'
+      - 'phase3_embeddings/**'
+      - 'phase4_backend/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/mutualfundrag-backend:latest
+            ghcr.io/${{ github.repository_owner }}/mutualfundrag-backend:${{ github.sha }}
