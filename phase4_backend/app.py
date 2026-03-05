@@ -14,6 +14,7 @@ except ImportError:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from phase4_backend.routes.chat import router as chat_router
 from phase4_backend.routes.meta import router as meta_router
@@ -32,6 +33,12 @@ app.add_middleware(
 )
 app.include_router(chat_router, prefix="", tags=["chat"])
 app.include_router(meta_router, prefix="", tags=["meta"])
+
+
+@app.get("/")
+def root():
+    """Redirect to API docs."""
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health")

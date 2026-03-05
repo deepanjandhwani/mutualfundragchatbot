@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build frontend for Vercel: inject API_BASE_URL into config and copy to public/.
-# Set API_BASE_URL in Vercel project Environment Variables to your backend URL (e.g. https://mutualfundrag-backend.onrender.com).
+# Set API_BASE_URL in Vercel project Environment Variables to your backend URL (e.g. https://your-app.up.railway.app).
 
 set -e
 API_BASE_URL="${API_BASE_URL:-}"

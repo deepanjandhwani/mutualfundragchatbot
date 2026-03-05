@@ -68,21 +68,21 @@ On success, `shared/last_refresh.json` is written; the backend serves it via **G
 
 **GitHub Actions:** A workflow runs the scheduler **daily at 6 AM UTC** (see `.github/workflows/scheduler.yml`). You can also trigger it manually from the Actions tab. Artifacts (e.g. `last_refresh.json`, ChromaDB) are uploaded on success for use in deploy or backup.
 
-## Deployment: Backend on Render, Frontend on Vercel
+## Deployment: Backend on Railway, Frontend on Vercel
 
-**Why not Streamlit for the backend?** Streamlit hosts Streamlit apps (Python UIs), not REST APIs. The frontend is a static site that calls a backend API, so the backend is deployed as a web service (Render) and the frontend as a static site (Vercel).
+**Why not Streamlit for the backend?** Streamlit hosts Streamlit apps (Python UIs), not REST APIs. The frontend is a static site that calls a backend API, so the backend is deployed as a web service (Railway) and the frontend as a static site (Vercel).
 
-### Backend on Render
+### Backend on Railway
 
 1. Push your repo to GitHub. The backend needs `phase3_embeddings/chroma_db/` (and ideally `.cache/` for the embedding model); run the pipeline locally and commit those, or add a build step that runs Phase 1–3.
-2. In [Render](https://render.com), create a **Web Service**, connect the repo, and use the **Blueprint** from `render.yaml` (or set manually: build `pip install -r requirements.txt`, start `uvicorn phase4_backend.app:app --host 0.0.0.0 --port $PORT`).
-3. In the service **Environment**, add **GROQ_API_KEY** (and optionally **GROQ_MODEL**). Do not commit secrets.
-4. Deploy and note the service URL (e.g. `https://mutualfundrag-backend.onrender.com`).
+2. In [Railway](https://railway.app), create a new project, connect the repo, and add a **Web Service** from the GitHub source. Railway will use the **Procfile** (`web: uvicorn phase4_backend.app:app --host 0.0.0.0 --port $PORT`) and install deps from `requirements.txt`.
+3. In the service **Variables** (or Settings → Environment), add **GROQ_API_KEY** (and optionally **GROQ_MODEL**). Do not commit secrets.
+4. Deploy and note the service URL (e.g. `https://your-app.up.railway.app`). Enable a public domain in Railway if needed.
 
 ### Frontend on Vercel
 
 1. In [Vercel](https://vercel.com), import the same GitHub repository.
-2. Add **API_BASE_URL** in Environment Variables and set it to your Render backend URL (e.g. `https://mutualfundrag-backend.onrender.com`) with no trailing slash.
+2. Add **API_BASE_URL** in Environment Variables and set it to your Railway backend URL (e.g. `https://your-app.up.railway.app`) with no trailing slash.
 3. Deploy. The build runs `scripts/build-vercel.sh`, which injects `API_BASE_URL` and copies `phase5_frontend/` to `public/`. Set **Output Directory** to `public` if required.
-4. The deployed site will serve the chat UI and call the Render backend for `/chat`, `/meta`, and `/health`.
+4. The deployed site will serve the chat UI and call the Railway backend for `/chat`, `/meta`, and `/health`.
 
