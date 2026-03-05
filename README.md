@@ -43,7 +43,7 @@ The backend (Phase 4) reads `GROQ_API_KEY` via `os.getenv` or `python-dotenv`. K
 
 ## Getting Started
 
-1. Create virtual environment: `python -m venv venv && source venv/bin/activate`
+1. Create virtual environment: `python3 -m venv venv && source venv/bin/activate` (or use `.venv` instead of `venv`)
 2. Install root deps: `pip install -r requirements.txt`
 3. Install Playwright browsers: `playwright install chromium`
 4. Add your keys to `.env` (see **Environment** above)
@@ -75,7 +75,7 @@ On success, `shared/last_refresh.json` is written; the backend serves it via **G
 ### Backend on Railway
 
 1. Push your repo to GitHub. The backend needs `phase3_embeddings/chroma_db/` (and ideally `.cache/` for the embedding model); run the pipeline locally and commit those, or add a build step that runs Phase 1–3.
-2. In [Railway](https://railway.app), create a new project, connect the repo, and add a **Web Service** from the GitHub source. Railway will use the **Procfile** (`web: uvicorn phase4_backend.app:app --host 0.0.0.0 --port $PORT`) and install deps from `requirements.txt`.
+2. In [Railway](https://railway.app), create a new project, connect the repo, and add a **Web Service** from the GitHub source. Railway will detect the **Dockerfile** and use it for the build (recommended: installs only backend deps via `requirements-railway.txt`, no Playwright, so deploys are much faster). If you prefer not to use Docker, set the build command to `pip install -r requirements-railway.txt` and start command to the Procfile’s `web` command.
 3. In the service **Variables** (or Settings → Environment), add **GROQ_API_KEY** (and optionally **GROQ_MODEL**). Do not commit secrets.
 4. Deploy and note the service URL (e.g. `https://your-app.up.railway.app`). Enable a public domain in Railway if needed.
 

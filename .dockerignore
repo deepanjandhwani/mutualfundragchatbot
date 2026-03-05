@@ -1,0 +1,19 @@
+# Backend deploy does not need these (keeps build context small)
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.env
+.env.*
+phase1_data_ingestion
+phase2_processing
+phase5_frontend
+phase6_scheduler
+scripts
+.github
+*.md
+vercel.json
+Procfile
+requirements.txt
+.dockerignore
