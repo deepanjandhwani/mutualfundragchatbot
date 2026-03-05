@@ -1,9 +1,14 @@
 """FastAPI app for Phase 4 RAG API."""
 
+import os
 from pathlib import Path
+
+# Load .env from project root (parent of phase4_backend); then cwd so env is set before config imports
 try:
     from dotenv import load_dotenv
-    load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+    _root = Path(__file__).resolve().parents[1]
+    load_dotenv(_root / ".env")
+    load_dotenv()  # cwd as fallback (e.g. Vercel)
 except ImportError:
     pass
 
@@ -31,4 +36,7 @@ app.include_router(meta_router, prefix="", tags=["meta"])
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "groq_configured": bool(os.getenv("GROQ_API_KEY", "").strip()),
+    }
