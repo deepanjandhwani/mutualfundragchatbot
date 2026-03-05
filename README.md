@@ -68,13 +68,21 @@ On success, `shared/last_refresh.json` is written; the backend serves it via **G
 
 **GitHub Actions:** A workflow runs the scheduler **daily at 6 AM UTC** (see `.github/workflows/scheduler.yml`). You can also trigger it manually from the Actions tab. Artifacts (e.g. `last_refresh.json`, ChromaDB) are uploaded on success for use in deploy or backup.
 
-## Deploy on Vercel
+## Deployment: Backend on Render, Frontend on Vercel
 
-The project is set up to deploy **frontend and backend together** on Vercel.
+**Why not Streamlit for the backend?** Streamlit hosts Streamlit apps (Python UIs), not REST APIs. The frontend is a static site that calls a backend API, so the backend is deployed as a web service (Render) and the frontend as a static site (Vercel).
 
-1. **Connect the repo** to Vercel ([vercel.com/new](https://vercel.com/new)) and import this repository.
-2. **Environment variables:** In the Vercel project, set **GROQ_API_KEY** (and optionally **GROQ_MODEL**). Do not commit these.
-3. **Deploy:** Vercel will use `app.py` as the FastAPI entrypoint and run `buildCommand` to copy `phase5_frontend/` into `public/`. The site root serves the frontend; `/chat`, `/health`, and `/meta` are handled by the backend.
-4. **Local vs production:** The frontend uses `http://127.0.0.1:8000` when opened from `localhost`; on your Vercel domain it uses the same origin (no `API_BASE_URL` needed).
+### Backend on Render
 
-**Limitations:** The serverless function includes ChromaDB and the embedding model. If the deployment exceeds Vercel’s bundle size limit (~500 MB), exclude more folders in `vercel.json` under `functions.app.py.excludeFiles`, or run the pipeline (Phase 1–3) and deploy with a pre-built `phase3_embeddings/chroma_db` and optional `shared/last_refresh.json` in the repo. The scheduler does not run on Vercel; use GitHub Actions (see above) and optionally wire artifacts into your deploy.
+1. Push your repo to GitHub. The backend needs `phase3_embeddings/chroma_db/` (and ideally `.cache/` for the embedding model); run the pipeline locally and commit those, or add a build step that runs Phase 1–3.
+2. In [Render](https://render.com), create a **Web Service**, connect the repo, and use the **Blueprint** from `render.yaml` (or set manually: build `pip install -r requirements.txt`, start `uvicorn phase4_backend.app:app --host 0.0.0.0 --port $PORT`).
+3. In the service **Environment**, add **GROQ_API_KEY** (and optionally **GROQ_MODEL**). Do not commit secrets.
+4. Deploy and note the service URL (e.g. `https://mutualfundrag-backend.onrender.com`).
+
+### Frontend on Vercel
+
+1. In [Vercel](https://vercel.com), import the same GitHub repository.
+2. Add **API_BASE_URL** in Environment Variables and set it to your Render backend URL (e.g. `https://mutualfundrag-backend.onrender.com`) with no trailing slash.
+3. Deploy. The build runs `scripts/build-vercel.sh`, which injects `API_BASE_URL` and copies `phase5_frontend/` to `public/`. Set **Output Directory** to `public` if required.
+4. The deployed site will serve the chat UI and call the Render backend for `/chat`, `/meta`, and `/health`.
+

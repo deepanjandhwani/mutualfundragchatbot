@@ -15,9 +15,8 @@ function formatLastUpdated(dateStr) {
 function getApiBase() {
   var h = typeof window !== "undefined" && window.location && window.location.hostname;
   if (h === "localhost" || h === "127.0.0.1") return "http://127.0.0.1:8000";
-  // On Vercel the Python function lives at /api/app
   if (typeof API_BASE_URL !== "undefined" && API_BASE_URL) return API_BASE_URL;
-  return "/api/app";
+  return "";
 }
 
 function loadDataLastUpdated() {

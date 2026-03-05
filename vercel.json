@@ -1,10 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "mkdir -p public && cp -r phase5_frontend/. public/",
-  "framework": null,
-  "functions": {
-    "api/app.py": {
-      "excludeFiles": "phase1_data_ingestion/**|phase2_processing/**|phase6_scheduler/**|phase5_frontend/**|.cache/**|.venv/**|tests/**|**/__pycache__/**|**/*.pyc"
-    }
-  }
+  "buildCommand": "bash scripts/build-vercel.sh",
+  "outputDirectory": "public",
+  "framework": null
 }
