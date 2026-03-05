@@ -11,8 +11,8 @@ __pycache__/
 venv/
 env/
 
-# ChromaDB
-phase3_embeddings/chroma_db/
+# ChromaDB (committed so deployed backend has data; only ~4 MB)
+# phase3_embeddings/chroma_db/
 
 # Hugging Face / sentence-transformers cache (large; not committed; bake into image at deploy)
 .cache/
@@ -22,7 +22,7 @@ phase1_data_ingestion/output/
 phase2_processing/output/
 
 # Phase 6: written by scheduler after pipeline run (frontend last_updated)
-shared/last_refresh.json
+# shared/last_refresh.json
 
 # IDE
 .idea/
