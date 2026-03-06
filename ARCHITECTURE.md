@@ -25,9 +25,9 @@ Secrets are loaded from a **`.env`** file in the project root. Do not commit `.e
 
 | Variable | Used in | Description |
 |----------|---------|--------------|
-| **GROQ_API_KEY** | Phase 4 (Backend) | API key for GROQ LLM. Get one at [Groq Console](https://console.groq.com/). |
+| **GEMINI_API_KEY** | Phase 4 (Backend) | API key for Google Gemini LLM. Get one at [Google AI Studio](https://aistudio.google.com/apikey). |
 
-In Phase 4, read the key with `os.getenv("GROQ_API_KEY")` (or load `.env` via `python-dotenv` before starting the app). Keep the key out of `config.py` and version control.
+In Phase 4, read the key with `os.getenv("GEMINI_API_KEY")` (or load `.env` via `python-dotenv` before starting the app). Keep the key out of `config.py` and version control.
 
 ---
 
@@ -208,13 +208,15 @@ phase3_embeddings/
 
 **Folder:** `phase4_backend/`
 
-**Purpose:** Serve RAG API with query handling, safety checks, and response formatting. The **system prompt** is defined and applied here. **GROQ** is used as the LLM for generating answers from retrieved context.
+**Purpose:** Serve RAG API with query handling, safety checks, and response formatting. The **system prompt** is defined and applied here. **Google Gemini** is used as the LLM for generating answers from retrieved context.
 
-### LLM: GROQ
+### LLM: Google Gemini
 
-- **Provider:** [GROQ](https://groq.com/) (low-latency inference API)
-- **Usage:** In Phase 4, retrieved chunks + user query + system prompt are sent to GROQ to generate the factual answer (≤3 sentences, with attribution).
-- **Config:** Model name (default `llama-3.3-70b-versatile`) in `phase4_backend/config.py`. API key from **environment** (see Environment Variables).
+- **Provider:** [Google Gemini](https://ai.google.dev/) via `google-generativeai` SDK
+- **Model:** `gemini-2.5-flash-lite` (default, configurable via `GEMINI_MODEL` env var)
+- **Free-tier limits:** 1,000 requests/day, 250K tokens/minute, no daily token cap
+- **Usage:** In Phase 4, retrieved chunks + user query + system prompt are sent to Gemini to generate the factual answer (≤3 sentences, with attribution).
+- **Config:** Model name in `phase4_backend/config.py`. API key from **environment** (see Environment Variables).
 
 ### Components
 
@@ -223,7 +225,7 @@ phase4_backend/
 ├── config.py
 ├── app.py                 # FastAPI/Flask app
 ├── rag/
-│   ├── retriever.py       # ChromaDB retrieval + reranking (optional)
+│   ├── retriever.py       # ChromaDB retrieval + fund name alias expansion
 │   ├── prompt_builder.py  # System prompt + user prompts (facts-only)
 │   └── response_formatter.py
 ├── safety/
@@ -269,6 +271,21 @@ The system prompt is implemented in `rag/prompt_builder.py`. It instructs the LL
   "refusal_reason": null
 }
 ```
+
+### Fund Name Alias Expansion
+
+Before embedding the query for ChromaDB search, the retriever expands short/partial fund names to their full canonical names. This ensures queries like "HDFC ELSS" or "midcap" retrieve the correct chunks.
+
+| Short query contains | Expands to |
+|---------------------|------------|
+| "elss", "tax saver" | HDFC ELSS TaxSaver Fund |
+| "flexi cap", "flexicap" | HDFC Flexi Cap Fund |
+| "large cap", "largecap" | HDFC Large Cap Fund |
+| "mid cap", "midcap" | HDFC Mid Cap Fund |
+| "next 50" | HDFC Nifty Next 50 Index Fund |
+| "largemidcap", "largemidcap 250" | HDFC Nifty LargeMidcap 250 Index Fund |
+| "large and mid cap" | HDFC Large and Mid Cap Fund |
+| "housing" | HDFC Housing Opportunities Fund |
 
 ### Safety Logic
 
@@ -373,7 +390,7 @@ After each successful pipeline run, Phase 6 writes **`shared/last_refresh.json`*
 
 ### Scheduling Options
 
-- **GitHub Actions:** Daily run at 6 AM UTC via `.github/workflows/scheduler.yml` (schedule + optional manual `workflow_dispatch`). Installs deps + Playwright Chromium, runs `python -m phase6_scheduler.run`, and uploads pipeline artifacts on success.
+- **GitHub Actions:** Daily run at 6 AM IST (00:30 UTC) via `.github/workflows/scheduler.yml` (schedule + optional manual `workflow_dispatch`). Installs deps + Playwright Chromium, runs `python -m phase6_scheduler.run`, commits updated ChromaDB + `last_refresh.json` back to repo, and triggers the backend Docker image rebuild workflow.
 - **Cron:** `0 6 * * *` (daily 6 AM) on a server
 - **APScheduler:** In-process scheduler
 - **External:** Systemd timer, Kubernetes CronJob (when deployment is added)
@@ -415,16 +432,36 @@ REFUSAL_COMPARE = "We don't compute or compare returns. Please check the fund pa
 
 ---
 
+## Deployment
+
+| Component | Platform | Details |
+|-----------|----------|---------|
+| **Frontend** | [Vercel](https://vercel.com/) | Static HTML/CSS/JS served from `phase5_frontend/`. Auto-deploys on push to `main`. `API_BASE_URL` in `config.js` points to the Railway backend. |
+| **Backend** | [Railway](https://railway.app/) | Docker image from GHCR (`ghcr.io/<github-username>/mutualfundrag-backend:latest`). Environment variable `GEMINI_API_KEY` set in Railway dashboard. |
+| **Docker image** | [GHCR](https://ghcr.io/) | Built by `.github/workflows/build-backend-image.yml` on every push to `main`. After build, triggers Railway redeploy via GraphQL API. |
+| **CI/CD** | GitHub Actions | `scheduler.yml` runs daily data refresh → commits updated data → triggers `build-backend-image.yml` → GHCR push → Railway auto-redeploy. Fully automated. |
+
+### GitHub Secrets Required
+
+| Secret | Purpose |
+|--------|---------|
+| `RAILWAY_API_TOKEN` | Triggers Railway redeploy after image build |
+| `RAILWAY_SERVICE_ID` | Identifies the Railway service to redeploy |
+| `RAILWAY_ENVIRONMENT_ID` | Identifies the Railway environment |
+
+---
+
 ## Technology Stack Summary
 
 | Component | Technology |
 |-----------|------------|
 | Scraping | Playwright (Chromium) |
-| Embeddings | ChromaDB + sentence-transformers (or OpenAI) |
-| **LLM (generation)** | **GROQ** (e.g. llama-3.3-70b-versatile) |
-| Backend | FastAPI / Flask |
-| Frontend | Vanilla HTML/CSS/JS (or React/Vue if preferred) |
-| Scheduler | APScheduler / Cron |
+| Embeddings | ChromaDB + sentence-transformers (`all-MiniLM-L6-v2`) |
+| **LLM (generation)** | **Google Gemini** (`gemini-2.5-flash-lite`) |
+| Backend | FastAPI |
+| Frontend | Vanilla HTML/CSS/JS |
+| Scheduler | GitHub Actions (daily cron) |
+| Deployment | Vercel (frontend) + Railway (backend via GHCR Docker image) |
 | Python | 3.10+ |
 
 ---
