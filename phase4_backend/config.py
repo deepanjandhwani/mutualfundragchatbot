@@ -23,8 +23,8 @@ EMBEDDING_MODEL_NAME = EMBEDDING_MODEL
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 
-# RAG: Gemini free tier is generous (250K TPM, 1000 RPD for flash-lite)
-RETRIEVAL_TOP_K = 6
+# RAG: Gemini free tier is generous (250K TPM, 1000 RPD, no daily token cap)
+RETRIEVAL_TOP_K = 16
 MAX_ANSWER_SENTENCES = 3
 # Cap sources shown in response (retrieved list is relevance-ordered; we show first N unique URLs)
 MAX_SOURCES_DISPLAY = 5
