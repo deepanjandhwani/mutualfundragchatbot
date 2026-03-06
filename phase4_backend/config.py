@@ -23,8 +23,9 @@ EMBEDDING_MODEL_NAME = EMBEDDING_MODEL
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
-# RAG (higher top_k so broad queries like "What is the NAV?" can cover all 8 funds)
-RETRIEVAL_TOP_K = 16
+# RAG: balance between answer quality and token usage (GROQ free tier: 100K tokens/day)
+# 6 chunks ≈ 2K tokens/query → ~45-50 queries/day. Was 16 but hit daily cap too fast.
+RETRIEVAL_TOP_K = 6
 MAX_ANSWER_SENTENCES = 3
 # Cap sources shown in response (retrieved list is relevance-ordered; we show first N unique URLs)
 MAX_SOURCES_DISPLAY = 5
