@@ -45,5 +45,5 @@ def root():
 def health():
     return {
         "status": "ok",
-        "groq_configured": bool(os.getenv("GROQ_API_KEY", "").strip()),
+        "gemini_configured": bool(os.getenv("GEMINI_API_KEY", "").strip()),
     }
