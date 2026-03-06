@@ -27,9 +27,11 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed phase-wise architecture, d
 ## Tech Stack
 
 - **Scraping**: Playwright (Chromium)
-- **Embeddings**: ChromaDB + sentence-transformers
+- **Embeddings**: ChromaDB + sentence-transformers (`all-MiniLM-L6-v2`)
+- **LLM**: Google Gemini (`gemini-2.5-flash-lite`)
 - **Backend**: FastAPI
 - **Frontend**: Vanilla HTML/CSS/JS
+- **Deployment**: Vercel (frontend) + Railway (backend via GHCR Docker image)
 
 ## Environment
 
@@ -37,9 +39,9 @@ Secrets are loaded from a `.env` file in the project root (do not commit it).
 
 1. Copy the template: `cp .env.example .env`
 2. Edit `.env` and set your keys, e.g.:
-   - **GROQ_API_KEY** — Required for Phase 4 (RAG). Get a key at [Groq Console](https://console.groq.com/). Optional: **GROQ_MODEL** (default: `llama-3.3-70b-versatile`).
+   - **GEMINI_API_KEY** — Required for Phase 4 (RAG). Get a key at [Google AI Studio](https://aistudio.google.com/apikey). Optional: **GEMINI_MODEL** (default: `gemini-2.5-flash-lite`).
 
-The backend (Phase 4) reads `GROQ_API_KEY` via `os.getenv` or `python-dotenv`. Keep `.env` in `.gitignore`.
+The backend (Phase 4) reads `GEMINI_API_KEY` via `os.getenv` or `python-dotenv`. Keep `.env` in `.gitignore`.
 
 ## Getting Started
 
@@ -66,7 +68,7 @@ python -m phase6_scheduler.run
 
 On success, `shared/last_refresh.json` is written; the backend serves it via **GET /meta** and the frontend displays it.
 
-**GitHub Actions:** A workflow runs the scheduler **daily at 6 AM UTC** (see `.github/workflows/scheduler.yml`). You can also trigger it manually from the Actions tab. Artifacts (e.g. `last_refresh.json`, ChromaDB) are uploaded on success for use in deploy or backup.
+**GitHub Actions:** A workflow runs the scheduler **daily at 6 AM IST (00:30 UTC)** (see `.github/workflows/scheduler.yml`). You can also trigger it manually from the Actions tab. On success, updated ChromaDB and `last_refresh.json` are committed back to the repo, and the backend Docker image rebuild is triggered automatically.
 
 ## Deployment: Backend on Railway, Frontend on Vercel
 
@@ -79,13 +81,13 @@ On success, `shared/last_refresh.json` is written; the backend serves it via **G
 **Option B – Pre-built image (recommended on free tier; no timeout)**  
 1. The workflow `.github/workflows/build-backend-image.yml` builds the backend image and pushes it to **GitHub Container Registry** (GHCR) on pushes to `main` that touch backend code. Run it once (push to `main` or trigger manually in the Actions tab).  
 2. In [Railway](https://railway.app), create a **Web Service** → **Deploy from Docker image** (not “GitHub repo”). Image: `ghcr.io/<your-github-username>/mutualfundrag-backend:latest`.  
-3. Make the GHCR package public (or add a token in Railway so it can pull). In Railway **Variables**, add **GROQ_API_KEY** (and optionally **GROQ_MODEL**).  
+3. Make the GHCR package public (or add a token in Railway so it can pull). In Railway **Variables**, add **GEMINI_API_KEY** (and optionally **GEMINI_MODEL**).  
 4. Deploys are pull + start only (no build on Railway, so no timeout). Re-run the workflow when you change backend code to refresh the image.
 
 **Option A – Build on Railway (needs Hobby or Pro if build &gt; 5 min)**  
 1. Push your repo to GitHub (include `phase3_embeddings/chroma_db/` and optionally `.cache/`).  
 2. In Railway, create a project, connect the repo, add a **Web Service**. Railway will use the **Dockerfile**.  
-3. Add **GROQ_API_KEY** in the service **Variables**.  
+3. Add **GEMINI_API_KEY** in the service **Variables**.  
 4. On the free tier the build may time out; on Hobby (20 min timeout) it should succeed.
 
 ### Frontend on Vercel
