@@ -1,5 +1,8 @@
-# Build backend Docker image and push to GHCR.
-# Railway can deploy from this image instead of building from source (much faster deploys).
+# Build backend Docker image, push to GHCR, then trigger Railway redeploy.
+# Requires two GitHub repo secrets:
+#   RAILWAY_API_TOKEN   — Railway account token (Settings → Tokens → Create Token)
+#   RAILWAY_SERVICE_ID  — Service ID (service Settings → copy from the URL or General tab)
+#   RAILWAY_ENVIRONMENT_ID — Environment ID (usually "production"; find via Railway CLI or API)
 name: Build backend image
 
 on:
@@ -38,3 +41,14 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/mutualfundrag-backend:latest
             ghcr.io/${{ github.repository_owner }}/mutualfundrag-backend:${{ github.sha }}
+
+      - name: Trigger Railway redeploy
+        if: success()
+        run: |
+          curl -s -X POST "https://backboard.railway.app/graphql/v2" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_API_TOKEN }}" \
+            -d '{
+              "query": "mutation { serviceInstanceRedeploy(environmentId: \"${{ secrets.RAILWAY_ENVIRONMENT_ID }}\", serviceId: \"${{ secrets.RAILWAY_SERVICE_ID }}\") }"
+            }'
+          echo "Railway redeploy triggered"
