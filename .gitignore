@@ -14,8 +14,8 @@ env/
 # ChromaDB (committed so deployed backend has data; only ~4 MB)
 # phase3_embeddings/chroma_db/
 
-# Hugging Face / sentence-transformers cache (large; not committed; bake into image at deploy)
-.cache/
+# Hugging Face / sentence-transformers cache (~87 MB; committed so cold starts don't download the model)
+# .cache/
 
 # Phase outputs (optional: remove if you want to track sample data)
 phase1_data_ingestion/output/

@@ -17,7 +17,11 @@ COPY shared ./shared
 COPY phase3_embeddings ./phase3_embeddings
 COPY phase4_backend ./phase4_backend
 
+# Pre-cached embedding model so cold starts don't download it
+COPY .cache ./.cache
+
 ENV PYTHONPATH=/app
+ENV HF_HOME=/app/.cache/huggingface
 EXPOSE 8000
 
 # Railway sets PORT at runtime
