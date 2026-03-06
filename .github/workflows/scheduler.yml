@@ -1,16 +1,20 @@
 # Run the data refresh pipeline (Phase 1 → 2 → 3) daily at 6 AM.
 # Default: 6 AM UTC. For 6 AM IST use: cron "30 0 * * *" (00:30 UTC = 06:00 IST).
+# After a successful run, commits updated data back to main and
+# triggers the build-backend-image workflow to rebuild the Docker image.
 name: Daily data refresh (scheduler)
 
 on:
   schedule:
     - cron: "0 6 * * *"
   workflow_dispatch:
-    # Allow manual trigger from Actions tab
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,6 +37,29 @@ jobs:
         run: python -m phase6_scheduler.run
         env:
           CI: "true"
+
+      - name: Commit updated data back to repo
+        if: success()
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add phase3_embeddings/chroma_db/ shared/last_refresh.json
+          if git diff --cached --quiet; then
+            echo "No data changes to commit"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "chore: update ChromaDB and last_refresh from scheduler"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Trigger backend image rebuild
+        if: success() && steps.commit.outputs.changed == 'true'
+        run: |
+          gh workflow run "Build backend image" --ref main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload pipeline artifacts (optional)
         if: success()
