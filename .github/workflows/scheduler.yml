@@ -1,12 +1,11 @@
-# Run the data refresh pipeline (Phase 1 → 2 → 3) daily at 6 AM.
-# Default: 6 AM UTC. For 6 AM IST use: cron "30 0 * * *" (00:30 UTC = 06:00 IST).
+# Run the data refresh pipeline (Phase 1 → 2 → 3) daily at 6 AM IST (00:30 UTC).
 # After a successful run, commits updated data back to main and
 # triggers the build-backend-image workflow to rebuild the Docker image.
 name: Daily data refresh (scheduler)
 
 on:
   schedule:
-    - cron: "0 6 * * *"
+    - cron: "30 0 * * *"
   workflow_dispatch:
 
 jobs:
