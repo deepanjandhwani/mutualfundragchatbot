@@ -45,6 +45,23 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed phase-wise architecture, d
 - **Stateless** — each query is independent; no conversation memory
 - **Dynamic response scaling** — multi-fund queries get one sentence per fund with scaled token limits; single-fund queries get ≤3 sentences
 
+## Data Sources
+
+The chatbot scrapes and indexes the following 8 HDFC mutual fund pages from IndMoney:
+
+| # | Fund | URL |
+|---|------|-----|
+| 1 | HDFC Large Cap Fund | [indmoney.com/...hdfc-large-cap-fund...](https://www.indmoney.com/mutual-funds/hdfc-large-cap-fund-direct-plan-growth-option-2989) |
+| 2 | HDFC Flexi Cap Fund | [indmoney.com/...hdfc-flexi-cap-fund...](https://www.indmoney.com/mutual-funds/hdfc-flexi-cap-fund-direct-plan-growth-option-3184) |
+| 3 | HDFC ELSS Tax Saver | [indmoney.com/...hdfc-elss-taxsaver...](https://www.indmoney.com/mutual-funds/hdfc-elss-taxsaver-direct-plan-growth-option-2685) |
+| 4 | HDFC Nifty Next 50 Index Fund | [indmoney.com/...hdfc-nifty-next-50...](https://www.indmoney.com/mutual-funds/hdfc-nifty-next-50-index-fund-direct-growth-1040010) |
+| 5 | HDFC Mid Cap Fund | [indmoney.com/...hdfc-mid-cap-fund...](https://www.indmoney.com/mutual-funds/hdfc-mid-cap-fund-direct-plan-growth-option-3097) |
+| 6 | HDFC Housing Opportunities Fund | [indmoney.com/...hdfc-housing-opportunities...](https://www.indmoney.com/mutual-funds/hdfc-housing-opportunities-fund-direct-growth-9006) |
+| 7 | HDFC Nifty LargeMidcap 250 Index Fund | [indmoney.com/...hdfc-nifty-largemidcap-250...](https://www.indmoney.com/mutual-funds/hdfc-nifty-largemidcap-250-index-fund-direct-growth-1047724) |
+| 8 | HDFC Large and Mid Cap Fund | [indmoney.com/...hdfc-large-and-mid-cap...](https://www.indmoney.com/mutual-funds/hdfc-large-and-mid-cap-fund-direct-growth-2874) |
+
+Data is refreshed daily at 6 AM IST via GitHub Actions (see Phase 6).
+
 ## Environment
 
 Secrets are loaded from a `.env` file in the project root (do not commit it).
