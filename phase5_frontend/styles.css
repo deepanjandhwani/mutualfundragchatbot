@@ -399,17 +399,28 @@ body {
   min-width: 0;
 }
 
-.fund-checkbox-all {
-  font-weight: 600;
-  color: var(--text);
+.fund-filter-hint {
+  margin: 0 0 0.4rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-style: italic;
   padding-bottom: 0.35rem;
-  margin-bottom: 0.2rem;
   border-bottom: 1px solid var(--border);
 }
 
 .fund-checkbox-list {
   display: flex;
   flex-direction: column;
+}
+
+.fund-checkbox input[type="checkbox"]:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.fund-checkbox:has(input:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .fund-filter-error {
@@ -437,6 +448,33 @@ body {
   border: 1px solid rgba(201, 162, 39, 0.2);
   border-radius: var(--radius-sm);
   line-height: 1.4;
+}
+
+.banner-free-tier {
+  flex-shrink: 0;
+  margin: 0 0 0.75rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background: rgba(100, 100, 100, 0.08);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.thinking-content {
+  color: var(--text-muted) !important;
+  font-style: italic;
+}
+
+@keyframes pulse-opacity {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.message.thinking .thinking-content {
+  animation: pulse-opacity 1.5s ease-in-out infinite;
 }
 
 .welcome {
@@ -624,4 +662,23 @@ body {
 #send-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.new-chat-btn {
+  padding: 0.75rem 1rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.new-chat-btn:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }

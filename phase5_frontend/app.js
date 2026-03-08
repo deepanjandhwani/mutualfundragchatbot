@@ -43,18 +43,16 @@ function loadDataLastUpdated() {
 
 /* ── Fund filter (multi-select checkboxes) ── */
 
-var _allFundIds = [];
+var MAX_FUND_SELECT = 3;
 
 function loadFundFilter() {
   var base = getApiBase();
   var listEl = document.getElementById("fund-checkbox-list");
-  var allCb = document.getElementById("fund-all");
-  if (!listEl || !allCb) return;
+  if (!listEl) return;
 
   fetch(base + "/funds")
     .then(function (res) { return res.ok ? res.json() : []; })
     .then(function (funds) {
-      _allFundIds = funds.map(function (f) { return f.id; });
       listEl.innerHTML = "";
       funds.forEach(function (fund) {
         var label = document.createElement("label");
@@ -63,7 +61,7 @@ function loadFundFilter() {
         cb.type = "checkbox";
         cb.className = "fund-cb";
         cb.value = fund.id;
-        cb.checked = true;
+        cb.checked = false;
         var span = document.createElement("span");
         span.textContent = fund.name.replace(/ Direct (Plan )?Growth$/, "");
         label.appendChild(cb);
@@ -71,16 +69,8 @@ function loadFundFilter() {
         listEl.appendChild(label);
 
         cb.addEventListener("change", function () {
-          syncAllCheckbox();
+          enforceFundLimit();
         });
-      });
-
-      allCb.addEventListener("change", function () {
-        var checked = allCb.checked;
-        var cbs = listEl.querySelectorAll(".fund-cb");
-        for (var i = 0; i < cbs.length; i++) {
-          cbs[i].checked = checked;
-        }
       });
     })
     .catch(function () {
@@ -88,21 +78,22 @@ function loadFundFilter() {
     });
 }
 
-function syncAllCheckbox() {
+function enforceFundLimit() {
   var listEl = document.getElementById("fund-checkbox-list");
-  var allCb = document.getElementById("fund-all");
-  if (!listEl || !allCb) return;
+  if (!listEl) return;
   var cbs = listEl.querySelectorAll(".fund-cb");
-  var allChecked = true;
+  var checkedCount = 0;
   for (var i = 0; i < cbs.length; i++) {
-    if (!cbs[i].checked) { allChecked = false; break; }
+    if (cbs[i].checked) checkedCount++;
   }
-  allCb.checked = allChecked;
+  for (var i = 0; i < cbs.length; i++) {
+    if (!cbs[i].checked) {
+      cbs[i].disabled = checkedCount >= MAX_FUND_SELECT;
+    }
+  }
 }
 
 function getSelectedFundIds() {
-  var allCb = document.getElementById("fund-all");
-  if (allCb && allCb.checked) return null;
   var listEl = document.getElementById("fund-checkbox-list");
   if (!listEl) return null;
   var cbs = listEl.querySelectorAll(".fund-cb:checked");
@@ -123,6 +114,9 @@ function runApp() {
   const form = document.getElementById("chat-form");
   const input = document.getElementById("message-input");
   const sendBtn = document.getElementById("send-btn");
+  const newChatBtn = document.getElementById("new-chat-btn");
+
+
 
   function addMessage(role, content, options = {}) {
     const div = document.createElement("div");
@@ -181,6 +175,31 @@ function runApp() {
     if (el) el.remove();
   }
 
+  var _thinkingTimer = null;
+  var _thinkingEl = null;
+
+  function showThinking() {
+    _thinkingEl = document.createElement("div");
+    _thinkingEl.className = "message bot thinking";
+    var dot = document.createElement("div");
+    dot.className = "content thinking-content";
+    dot.textContent = "Thinking...";
+    _thinkingEl.appendChild(dot);
+    messagesEl.appendChild(_thinkingEl);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    var seconds = 0;
+    _thinkingTimer = setInterval(function () {
+      seconds++;
+      dot.textContent = "Thinking... (" + seconds + "s)";
+    }, 1000);
+  }
+
+  function hideThinking() {
+    if (_thinkingTimer) { clearInterval(_thinkingTimer); _thinkingTimer = null; }
+    if (_thinkingEl) { _thinkingEl.remove(); _thinkingEl = null; }
+  }
+
   function setLoading(loading) {
     sendBtn.disabled = loading;
     input.disabled = loading;
@@ -191,8 +210,8 @@ function runApp() {
     if (!message) return;
 
     var fundIds = getSelectedFundIds();
-    if (fundIds && fundIds.length === 0) {
-      addMessage("bot", "Please select at least one fund from the filter to search.", { refused: true });
+    if (!fundIds || fundIds.length === 0) {
+      addMessage("bot", "Please select at least one fund (up to 3) from the filter.", { refused: true });
       return;
     }
 
@@ -200,6 +219,7 @@ function runApp() {
     input.value = "";
     setLoading(true);
     clearStatus();
+    showThinking();
 
     var body = { message: message };
     if (fundIds) body.fund_ids = fundIds;
@@ -215,6 +235,7 @@ function runApp() {
         return res.json();
       })
       .then(function (data) {
+        hideThinking();
         var answer = data.answer || "No answer.";
         var isRateLimit = answer.indexOf("free-tier limit") !== -1 || answer.indexOf("Please try again in a few minutes") !== -1;
         addMessage("bot", answer, {
@@ -225,6 +246,7 @@ function runApp() {
         });
       })
       .catch(function (err) {
+        hideThinking();
         setStatus("Error: " + (err.message || "Could not reach the server. Is the backend running?"), true);
       })
       .finally(function () {
@@ -236,6 +258,15 @@ function runApp() {
     e.preventDefault();
     submitMessage(input.value);
   });
+
+  if (newChatBtn) {
+    newChatBtn.addEventListener("click", function () {
+      messagesEl.innerHTML = "";
+      clearStatus();
+      input.value = "";
+      input.focus();
+    });
+  }
 
   document.querySelectorAll(".example-btn").forEach(function (btn) {
     btn.addEventListener("click", function () {
