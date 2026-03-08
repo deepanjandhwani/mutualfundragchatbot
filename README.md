@@ -38,7 +38,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed phase-wise architecture, d
 - **Fund filter (max 3)** — sidebar checkboxes (up to 3 at a time); queries are scoped to selected funds via per-fund ChromaDB retrieval
 - **Per-fund retrieval** — queries ChromaDB separately for each selected fund, guaranteeing every fund is represented in results
 - **Fund alias expansion** — short names like "ELSS" or "Flexi Cap" are automatically expanded to full canonical names before retrieval
-- **Fund mismatch warning** — client-side detection warns if query mentions a fund not currently selected in the filter
+- **Fund mismatch warning** — two-layer check (frontend + backend) warns if query mentions a fund not currently selected in the filter; no LLM call wasted
 - **Dark/light theme** — toggle in header, preference persisted in localStorage; IndMoney logo auto-switches variant
 - **Thinking indicator** — pulsing timer shows elapsed seconds while waiting for a response
 - **New Chat button** — clears the chat display

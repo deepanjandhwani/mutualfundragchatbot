@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from phase4_backend.safety.input_validator import validate_user_message
 from phase4_backend.safety.query_classifier import classify_query
-from phase4_backend.rag.retriever import retrieve
+from phase4_backend.rag.retriever import retrieve, detect_mentioned_funds
 from phase4_backend.rag.prompt_builder import SYSTEM_PROMPT, build_user_prompt
 from phase4_backend.rag.response_formatter import format_sources, ensure_last_updated_suffix
 from phase4_backend import config
@@ -80,12 +80,24 @@ def chat(request: ChatRequest) -> ChatResponse:
     action, refusal_msg = classify_query(message)
     if action != "answer" and refusal_msg:
         return ChatResponse(
-            answer=refusal_msg,
+            answer="",
             sources=[],
             refused=True,
             refusal_reason=refusal_msg,
         )
-    # 3) Retrieve (optionally filtered by selected funds)
+    # 3) Fund mismatch check
+    if request.fund_ids:
+        mentioned = detect_mentioned_funds(message)
+        unselected = [(fid, name) for fid, name in mentioned if fid not in request.fund_ids]
+        if unselected:
+            names = ", ".join(name for _, name in unselected)
+            return ChatResponse(
+                answer="",
+                sources=[],
+                refused=True,
+                refusal_reason=f"Your question mentions {names} which is not selected in the filter. Please select it from the filter for accurate results.",
+            )
+    # 4) Retrieve (optionally filtered by selected funds)
     retrieved = retrieve(
         message,
         config.CHROMA_PERSIST_DIR,

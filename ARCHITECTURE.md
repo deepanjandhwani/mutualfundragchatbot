@@ -297,6 +297,7 @@ Before embedding the query for ChromaDB search, the retriever expands short/part
 | **User message** contains PII (PAN, Aadhaar, account numbers, OTPs, email, phone) | Reject with "We don't accept or store personal identifiers." |
 | "Should I buy/sell?" / opinionated | Refuse with polite message + educational link |
 | "Compare returns" / compute returns | Refuse: "We don't compute or compare returns. Please check the source." + URL |
+| Query mentions a fund not in selected `fund_ids` | Refuse: "Your question mentions [fund] which is not selected in the filter." (checked on both frontend and backend) |
 | Factual (NAV, AUM, etc.) | Process via RAG |
 
 PII validation is applied **only to the user's chat input**, not to stored/scraped fund content.
@@ -307,7 +308,7 @@ The `/chat` endpoint accepts an optional `fund_ids` array. When multiple funds a
 
 A **GET /funds** endpoint returns the list of available funds (`id` + `name`) for the frontend to populate the filter dynamically.
 
-The frontend enforces a **maximum of 3 funds** selected at a time. When 3 are checked, remaining unchecked funds are disabled. A client-side fund name detector warns users if their query mentions a fund that isn't currently selected in the filter.
+The frontend enforces a **maximum of 3 funds** selected at a time. When 3 are checked, remaining unchecked funds are disabled. A **two-layer fund mismatch check** (client-side + backend) warns users if their query mentions a fund that isn't currently selected, preventing wasted LLM calls.
 
 ### Response Rules
 

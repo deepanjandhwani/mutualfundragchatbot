@@ -39,6 +39,42 @@ _FUND_ALIASES: list[tuple[str, str]] = [
 ]
 
 
+_ALIAS_TO_FUND_ID: list[tuple[str, str, str]] = [
+    ("large and mid cap", "HDFC Large and Mid Cap Fund", "2874"),
+    ("large & mid cap", "HDFC Large and Mid Cap Fund", "2874"),
+    ("largemidcap 250", "HDFC Nifty LargeMidcap 250 Index Fund", "1047724"),
+    ("large midcap 250", "HDFC Nifty LargeMidcap 250 Index Fund", "1047724"),
+    ("largemidcap", "HDFC Nifty LargeMidcap 250 Index Fund", "1047724"),
+    ("nifty largemidcap", "HDFC Nifty LargeMidcap 250 Index Fund", "1047724"),
+    ("nifty next 50", "HDFC Nifty Next 50 Index Fund", "1040010"),
+    ("next 50", "HDFC Nifty Next 50 Index Fund", "1040010"),
+    ("large cap", "HDFC Large Cap Fund", "2989"),
+    ("largecap", "HDFC Large Cap Fund", "2989"),
+    ("flexi cap", "HDFC Flexi Cap Fund", "3184"),
+    ("flexicap", "HDFC Flexi Cap Fund", "3184"),
+    ("elss tax saver", "HDFC ELSS TaxSaver Fund", "2685"),
+    ("elss taxsaver", "HDFC ELSS TaxSaver Fund", "2685"),
+    ("elss", "HDFC ELSS TaxSaver Fund", "2685"),
+    ("tax saver", "HDFC ELSS TaxSaver Fund", "2685"),
+    ("taxsaver", "HDFC ELSS TaxSaver Fund", "2685"),
+    ("mid cap", "HDFC Mid Cap Fund", "3097"),
+    ("midcap", "HDFC Mid Cap Fund", "3097"),
+    ("housing", "HDFC Housing Opportunities Fund", "9006"),
+]
+
+
+def detect_mentioned_funds(query: str) -> list[tuple[str, str]]:
+    """Return list of (fund_id, fund_name) for funds mentioned in the query."""
+    q_lower = query.lower()
+    seen: set[str] = set()
+    result: list[tuple[str, str]] = []
+    for alias, name, fid in _ALIAS_TO_FUND_ID:
+        if alias in q_lower and fid not in seen:
+            seen.add(fid)
+            result.append((fid, name))
+    return result
+
+
 def _expand_fund_aliases(query: str) -> str:
     """Replace short fund name references with canonical full names for better retrieval."""
     q_lower = query.lower()
