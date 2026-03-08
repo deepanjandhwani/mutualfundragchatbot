@@ -7,7 +7,7 @@ A **facts-only** RAG chatbot that answers factual queries about HDFC mutual fund
 - **Facts-only**: No investment advice; refuses opinionated questions
 - **Privacy**: Never accepts/stores PAN, Aadhaar, account numbers, OTPs, emails, phone numbers
 - **No computations**: Does not compute or compare returns; returns source URL when asked
-- **Concise**: Answers ≤3 sentences with "Last updated from sources" and citation links
+- **Concise**: Single-fund answers ≤3 sentences; multi-fund answers use one sentence per fund. Always ends with "Last updated from sources" and citation links
 
 ## Phase Structure
 
@@ -16,8 +16,8 @@ A **facts-only** RAG chatbot that answers factual queries about HDFC mutual fund
 | 1 | `phase1_data_ingestion/` | Scrape 8 IndMoney fund URLs with Playwright |
 | 2 | `phase2_processing/` | Parse, chunk, validate (no PII) |
 | 3 | `phase3_embeddings/` | Embed chunks and store in ChromaDB |
-| 4 | `phase4_backend/` | RAG API with safety checks |
-| 5 | `phase5_frontend/` | Tiny chat UI (facts-only) |
+| 4 | `phase4_backend/` | RAG API with safety checks, per-fund retrieval, fund alias expansion |
+| 5 | `phase5_frontend/` | Chat UI with fund filter, dark/light theme, IndMoney branding |
 | 6 | `phase6_scheduler/` | Scheduler to refresh data and trigger pipeline |
 
 ## Architecture
@@ -32,6 +32,14 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed phase-wise architecture, d
 - **Backend**: FastAPI
 - **Frontend**: Vanilla HTML/CSS/JS
 - **Deployment**: Vercel (frontend) + Railway (backend via GHCR Docker image)
+
+## Features
+
+- **Multi-select fund filter** — sidebar checkboxes let users select specific funds or all; queries are scoped to selected funds via per-fund ChromaDB retrieval
+- **Per-fund retrieval** — queries ChromaDB separately for each selected fund, guaranteeing every fund is represented in results
+- **Fund alias expansion** — short names like "ELSS" or "Flexi Cap" are automatically expanded to full canonical names before retrieval
+- **Dark/light theme** — toggle in header, preference persisted in localStorage; IndMoney logo auto-switches variant
+- **Dynamic response scaling** — multi-fund queries get one sentence per fund with scaled token limits; single-fund queries get ≤3 sentences
 
 ## Environment
 
@@ -95,5 +103,5 @@ On success, `shared/last_refresh.json` is written; the backend serves it via **G
 1. In [Vercel](https://vercel.com), import the same GitHub repository.
 2. Add **API_BASE_URL** in Environment Variables and set it to your Railway backend URL (e.g. `https://your-app.up.railway.app`) with no trailing slash.
 3. Deploy. The build runs `scripts/build-vercel.sh`, which injects `API_BASE_URL` and copies `phase5_frontend/` to `public/`. Set **Output Directory** to `public` if required.
-4. The deployed site will serve the chat UI and call the Railway backend for `/chat`, `/meta`, and `/health`.
+4. The deployed site will serve the chat UI and call the Railway backend for `/chat`, `/meta`, `/funds`, and `/health`.
 
