@@ -62,6 +62,25 @@ The chatbot scrapes and indexes the following 8 HDFC mutual fund pages from IndM
 
 Data is refreshed daily at 6 AM IST via GitHub Actions (see Phase 6).
 
+## Sample Q&A
+
+Below are real responses from the chatbot (with HDFC Large Cap Fund selected in the filter):
+
+**Q: What is the NAV of HDFC Large Cap?**
+> The NAV of the HDFC Large Cap Fund today is ₹1235.91. Last updated from sources.
+>
+> *Sources: [HDFC Large Cap Fund Direct Plan Growth - IndMoney](https://www.indmoney.com/mutual-funds/hdfc-large-cap-fund-direct-plan-growth-option-2989)*
+
+**Q: AUM of HDFC Large Cap Fund?**
+> The AUM of the HDFC Large Cap Fund is ₹39,621 Cr. As of Jan'26, the AUM was ₹39.6K Cr. The AUM decreased by ₹983.4 Cr between Jan'26 and Dec'25. Last updated from sources.
+>
+> *Sources: [HDFC Large Cap Fund Direct Plan Growth - IndMoney](https://www.indmoney.com/mutual-funds/hdfc-large-cap-fund-direct-plan-growth-option-2989)*
+
+**Q: Which sectors does this fund invest in?**
+> The fund has significant allocations in the financial sector (34.35%), cyclical sectors (12.26%), and technology (9.80%). Other sectors include health (9.1%), industrial (7.9%), communication (6.2%), consumer defensive (6.2%), energy (5.7%), basic materials (5.4%), tech (4.9%), utilities (4.2%), and real estate (0.5%). Last updated from sources.
+>
+> *Sources: [HDFC Large Cap Fund Direct Plan Growth - IndMoney](https://www.indmoney.com/mutual-funds/hdfc-large-cap-fund-direct-plan-growth-option-2989)*
+
 ## Environment
 
 Secrets are loaded from a `.env` file in the project root (do not commit it).
