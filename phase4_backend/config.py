@@ -27,4 +27,4 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 RETRIEVAL_TOP_K = 16
 MAX_ANSWER_SENTENCES = 3
 # Cap sources shown in response (retrieved list is relevance-ordered; we show first N unique URLs)
-MAX_SOURCES_DISPLAY = 5
+MAX_SOURCES_DISPLAY = 10

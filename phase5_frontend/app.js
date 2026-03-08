@@ -41,8 +41,83 @@ function loadDataLastUpdated() {
     });
 }
 
+/* ── Fund filter (multi-select checkboxes) ── */
+
+var _allFundIds = [];
+
+function loadFundFilter() {
+  var base = getApiBase();
+  var listEl = document.getElementById("fund-checkbox-list");
+  var allCb = document.getElementById("fund-all");
+  if (!listEl || !allCb) return;
+
+  fetch(base + "/funds")
+    .then(function (res) { return res.ok ? res.json() : []; })
+    .then(function (funds) {
+      _allFundIds = funds.map(function (f) { return f.id; });
+      listEl.innerHTML = "";
+      funds.forEach(function (fund) {
+        var label = document.createElement("label");
+        label.className = "fund-checkbox";
+        var cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.className = "fund-cb";
+        cb.value = fund.id;
+        cb.checked = true;
+        var span = document.createElement("span");
+        span.textContent = fund.name.replace(/ Direct (Plan )?Growth$/, "");
+        label.appendChild(cb);
+        label.appendChild(span);
+        listEl.appendChild(label);
+
+        cb.addEventListener("change", function () {
+          syncAllCheckbox();
+        });
+      });
+
+      allCb.addEventListener("change", function () {
+        var checked = allCb.checked;
+        var cbs = listEl.querySelectorAll(".fund-cb");
+        for (var i = 0; i < cbs.length; i++) {
+          cbs[i].checked = checked;
+        }
+      });
+    })
+    .catch(function () {
+      listEl.innerHTML = '<span class="fund-filter-error">Could not load funds.</span>';
+    });
+}
+
+function syncAllCheckbox() {
+  var listEl = document.getElementById("fund-checkbox-list");
+  var allCb = document.getElementById("fund-all");
+  if (!listEl || !allCb) return;
+  var cbs = listEl.querySelectorAll(".fund-cb");
+  var allChecked = true;
+  for (var i = 0; i < cbs.length; i++) {
+    if (!cbs[i].checked) { allChecked = false; break; }
+  }
+  allCb.checked = allChecked;
+}
+
+function getSelectedFundIds() {
+  var allCb = document.getElementById("fund-all");
+  if (allCb && allCb.checked) return null;
+  var listEl = document.getElementById("fund-checkbox-list");
+  if (!listEl) return null;
+  var cbs = listEl.querySelectorAll(".fund-cb:checked");
+  var ids = [];
+  for (var i = 0; i < cbs.length; i++) {
+    ids.push(cbs[i].value);
+  }
+  return ids.length > 0 ? ids : null;
+}
+
+/* ── Main app ── */
+
 function runApp() {
   loadDataLastUpdated();
+  loadFundFilter();
 
   const messagesEl = document.getElementById("messages");
   const form = document.getElementById("chat-form");
@@ -115,16 +190,25 @@ function runApp() {
     const message = (text || "").trim();
     if (!message) return;
 
+    var fundIds = getSelectedFundIds();
+    if (fundIds && fundIds.length === 0) {
+      addMessage("bot", "Please select at least one fund from the filter to search.", { refused: true });
+      return;
+    }
+
     addMessage("user", message);
     input.value = "";
     setLoading(true);
     clearStatus();
 
+    var body = { message: message };
+    if (fundIds) body.fund_ids = fundIds;
+
     const url = getApiBase() + "/chat";
     fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: message }),
+      body: JSON.stringify(body),
     })
       .then(function (res) {
         if (!res.ok) throw new Error("Request failed: " + res.status);

@@ -19,6 +19,7 @@ router = APIRouter()
 
 class ChatRequest(BaseModel):
     message: str
+    fund_ids: list[str] | None = None
 
 
 class ChatResponse(BaseModel):
@@ -34,7 +35,7 @@ RATE_LIMIT_BASE = (
 )
 
 
-def _call_gemini(system_prompt: str, user_prompt: str) -> tuple[str, bool]:
+def _call_gemini(system_prompt: str, user_prompt: str, max_tokens: int = 256) -> tuple[str, bool]:
     """Call Google Gemini API. Returns (answer, is_rate_limit_error)."""
     if not config.GEMINI_API_KEY:
         return "Gemini API key not configured. Set GEMINI_API_KEY in environment.", False
@@ -48,7 +49,7 @@ def _call_gemini(system_prompt: str, user_prompt: str) -> tuple[str, bool]:
         resp = model.generate_content(
             user_prompt,
             generation_config=genai.GenerationConfig(
-                max_output_tokens=256,
+                max_output_tokens=max_tokens,
                 temperature=0.1,
             ),
         )
@@ -84,18 +85,21 @@ def chat(request: ChatRequest) -> ChatResponse:
             refused=True,
             refusal_reason=refusal_msg,
         )
-    # 3) Retrieve
+    # 3) Retrieve (optionally filtered by selected funds)
     retrieved = retrieve(
         message,
         config.CHROMA_PERSIST_DIR,
         config.COLLECTION_NAME,
         config.EMBEDDING_MODEL_NAME,
         top_k=config.RETRIEVAL_TOP_K,
+        fund_ids=request.fund_ids,
     )
     context_docs = [r["document"] for r in retrieved]
-    user_prompt = build_user_prompt(message, context_docs)
+    unique_funds = len({r["fund_id"] for r in retrieved if r.get("fund_id")})
+    user_prompt = build_user_prompt(message, context_docs, num_funds=unique_funds)
     # 4) Gemini
-    answer, is_rate_limit = _call_gemini(SYSTEM_PROMPT, user_prompt)
+    max_tokens = 256 if unique_funds <= 1 else 128 + 64 * unique_funds
+    answer, is_rate_limit = _call_gemini(SYSTEM_PROMPT, user_prompt, max_tokens=max_tokens)
     if not is_rate_limit:
         answer = ensure_last_updated_suffix(answer)
     if is_rate_limit:

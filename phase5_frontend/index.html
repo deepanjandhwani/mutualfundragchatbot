@@ -9,15 +9,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <script>
-    document.documentElement.setAttribute("data-theme", "dark");
+    var saved = localStorage.getItem("theme");
+    document.documentElement.setAttribute("data-theme", saved || "dark");
   </script>
 </head>
 <body>
   <div class="app">
     <header class="header">
       <div class="header-logos">
-        <div class="logo-wrap logo-wrap-combined">
-          <img src="assets/combined-logo.png" alt="HDFC Bank Money" class="logo logo-combined" />
+        <div class="logo-wrap logo-wrap-indmoney">
+          <img src="assets/indmoney-logo-dark.svg" alt="INDmoney" class="logo logo-indmoney" id="logo-img" />
         </div>
       </div>
       <div class="header-titles">
@@ -26,34 +27,25 @@
         <p class="disclaimer-risk">Mutual funds are subject to market risks. Read all scheme-related documents carefully.</p>
         <p class="data-last-updated" id="data-last-updated" aria-live="polite"></p>
       </div>
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark/light mode" title="Toggle theme">
+        <span class="theme-icon" id="theme-icon">&#9790;</span>
+      </button>
     </header>
 
     <div class="layout">
       <aside class="sidebar">
-        <details class="instructions-details" id="instructions-details">
-          <summary class="sidebar-summary">How it works</summary>
-          <section class="instructions">
-            <ul>
-              <li>Factual answers only (NAV, AUM, returns, holdings, etc.)</li>
-              <li>No advice or comparisons; short replies with sources</li>
-              <li>Rejects PII and opinion questions</li>
-            </ul>
-            <p class="instruction-ai">Responses are AI-generated. Please read the cited sources to verify before making any investment decision.</p>
-          </section>
-        </details>
         <section class="funds-section">
           <details class="funds-details" id="funds-details">
-            <summary class="sidebar-summary">Funds we answer about (8)</summary>
-            <ol class="fund-list">
-              <li>HDFC Large Cap Fund Direct Plan Growth</li>
-              <li>HDFC Flexi Cap Fund Direct Plan Growth</li>
-              <li>HDFC ELSS Tax Saver Direct Plan Growth</li>
-              <li>HDFC Nifty Next 50 Index Fund Direct Growth</li>
-              <li>HDFC Mid Cap Fund Direct Plan Growth</li>
-              <li>HDFC Housing Opportunities Fund Direct Growth</li>
-              <li>HDFC Nifty LargeMidcap 250 Index Fund Direct Growth</li>
-              <li>HDFC Large and Mid Cap Fund Direct Growth</li>
-            </ol>
+            <summary class="sidebar-summary">Filter by fund</summary>
+            <div class="fund-filter" id="fund-filter">
+              <label class="fund-checkbox fund-checkbox-all">
+                <input type="checkbox" id="fund-all" checked />
+                <span>All Funds</span>
+              </label>
+              <div class="fund-checkbox-list" id="fund-checkbox-list">
+                <!-- Populated dynamically from /funds API -->
+              </div>
+            </div>
           </details>
         </section>
       </aside>
@@ -82,6 +74,16 @@
             <button type="submit" id="send-btn">Send</button>
           </form>
         </section>
+
+        <footer class="how-it-works">
+          <h3>How it works</h3>
+          <ul>
+            <li>Factual answers only (NAV, AUM, returns, holdings, etc.)</li>
+            <li>No advice or comparisons; short replies with sources</li>
+            <li>Rejects PII and opinion questions</li>
+          </ul>
+          <p class="instruction-ai">Responses are AI-generated. Please read the cited sources to verify before making any investment decision.</p>
+        </footer>
       </main>
     </div>
   </div>
@@ -91,19 +93,35 @@
     (function() {
       function setMobileSidebar() {
         var mobile = window.innerWidth <= 768;
-        var instructions = document.getElementById("instructions-details");
         var funds = document.getElementById("funds-details");
-        if (!instructions || !funds) return;
+        if (!funds) return;
         if (mobile) {
-          instructions.removeAttribute("open");
           funds.removeAttribute("open");
         } else {
-          instructions.setAttribute("open", "");
-          funds.removeAttribute("open");
+          funds.setAttribute("open", "");
         }
       }
       setMobileSidebar();
       window.addEventListener("resize", setMobileSidebar);
+
+      /* Theme toggle */
+      var toggle = document.getElementById("theme-toggle");
+      var icon = document.getElementById("theme-icon");
+      var logoImg = document.getElementById("logo-img");
+
+      function applyTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("theme", theme);
+        icon.textContent = theme === "dark" ? "\u263E" : "\u2600";
+        logoImg.src = theme === "dark" ? "assets/indmoney-logo-dark.svg" : "assets/indmoney-logo-light.svg";
+      }
+
+      applyTheme(document.documentElement.getAttribute("data-theme") || "dark");
+
+      toggle.addEventListener("click", function() {
+        var current = document.documentElement.getAttribute("data-theme");
+        applyTheme(current === "dark" ? "light" : "dark");
+      });
     })();
   </script>
 </body>

@@ -49,26 +49,12 @@ def _expand_fund_aliases(query: str) -> str:
     return query
 
 
-def retrieve(
-    query: str,
-    chroma_persist_dir: Path,
-    collection_name: str,
-    embedding_model_name: str,
-    top_k: int = 5,
-) -> list[dict]:
-    """
-    Embed the query, search ChromaDB, return list of dicts with document, metadata (source_url, fund_name, etc.).
-    """
-    query = _expand_fund_aliases(query)
-    client = get_client(chroma_persist_dir)
-    collection = get_or_create_collection(client, collection_name)
-    query_embeddings = encode([query], embedding_model_name)
-    if not query_embeddings:
-        return []
-    result = query_collection(collection, query_embeddings, n_results=top_k)
-    # result: ids, documents, metadatas, distances (each list of lists for single query)
+def _query_single(collection, query_embeddings, top_k: int, where=None) -> list[dict]:
+    """Run a single ChromaDB query and return list of result dicts."""
+    result = query_collection(collection, query_embeddings, n_results=top_k, where=where)
     docs = result.get("documents", [[]])[0] or []
     metadatas = result.get("metadatas", [[]])[0] or []
+    distances = result.get("distances", [[]])[0] or []
     out = []
     for i, doc in enumerate(docs):
         meta = metadatas[i] if i < len(metadatas) else {}
@@ -79,5 +65,46 @@ def retrieve(
             "fund_id": meta.get("fund_id", ""),
             "section": meta.get("section", ""),
             "last_updated": meta.get("last_updated", ""),
+            "_distance": distances[i] if i < len(distances) else 999,
         })
     return out
+
+
+def retrieve(
+    query: str,
+    chroma_persist_dir: Path,
+    collection_name: str,
+    embedding_model_name: str,
+    top_k: int = 5,
+    fund_ids: list[str] | None = None,
+) -> list[dict]:
+    """
+    Embed the query, search ChromaDB, return list of dicts with document, metadata.
+    When multiple funds are involved, queries per-fund to guarantee representation.
+    """
+    from shared.config import FUND_URLS
+
+    query = _expand_fund_aliases(query)
+    client = get_client(chroma_persist_dir)
+    collection = get_or_create_collection(client, collection_name)
+    query_embeddings = encode([query], embedding_model_name)
+    if not query_embeddings:
+        return []
+
+    if fund_ids and len(fund_ids) == 1:
+        return _query_single(collection, query_embeddings, top_k, where={"fund_id": fund_ids[0]})
+
+    ids_to_query = fund_ids if fund_ids else [f["id"] for f in FUND_URLS]
+    per_fund_k = max(3, top_k // len(ids_to_query))
+    merged: list[dict] = []
+    seen_docs: set[str] = set()
+    for fid in ids_to_query:
+        rows = _query_single(collection, query_embeddings, per_fund_k, where={"fund_id": fid})
+        for row in rows:
+            doc_key = row["document"][:120]
+            if doc_key not in seen_docs:
+                seen_docs.add(doc_key)
+                merged.append(row)
+
+    merged.sort(key=lambda r: r.get("_distance", 999))
+    return merged

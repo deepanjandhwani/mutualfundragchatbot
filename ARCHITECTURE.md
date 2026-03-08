@@ -232,7 +232,8 @@ phase4_backend/
 │   ├── input_validator.py # Block PII in user message, opinionated queries
 │   └── query_classifier.py # Detect "should I buy/sell", comparison requests
 ├── routes/
-│   └── chat.py            # POST /chat
+│   ├── chat.py            # POST /chat (accepts optional fund_ids filter)
+│   └── meta.py            # GET /meta, GET /funds
 ├── run.py
 └── requirements.txt
 ```
@@ -242,7 +243,7 @@ phase4_backend/
 The system prompt is implemented in `rag/prompt_builder.py`. It instructs the LLM to:
 
 - Answer **factual queries only** (NAV, AUM, expense ratio, returns, allocation, holdings, overview, FAQ, etc.)
-- Keep answers **≤3 sentences**
+- When **multiple funds** are in context, answer for **all** of them (one sentence per fund); otherwise ≤3 sentences
 - Always include **"Last updated from sources"** and cite source URLs
 - **Do not** give investment advice or recommendations
 - **Do not** compute or compare returns
@@ -253,9 +254,10 @@ The system prompt is implemented in `rag/prompt_builder.py`. It instructs the LL
 **POST /chat**
 
 ```json
-// Request
+// Request (fund_ids is optional; omit or null for all funds)
 {
-  "message": "What is the NAV of HDFC Large Cap Fund?"
+  "message": "What is the NAV of HDFC Large Cap Fund?",
+  "fund_ids": ["2989", "3184"]
 }
 
 // Response
@@ -298,9 +300,16 @@ Before embedding the query for ChromaDB search, the retriever expands short/part
 
 PII validation is applied **only to the user's chat input**, not to stored/scraped fund content.
 
+### Fund Filtering (Multi-select)
+
+The `/chat` endpoint accepts an optional `fund_ids` array. When provided, ChromaDB retrieval is filtered to only those funds using a `$in` metadata filter on `fund_id`. This allows users to select specific funds from the UI and ask generic questions like "What is the expense ratio?" without needing to include the fund name in the query.
+
+A **GET /funds** endpoint returns the list of available funds (`id` + `name`) for the frontend to populate the filter dynamically.
+
 ### Response Rules
 
-- Answer ≤3 sentences
+- When a single fund is in context: answer in ≤3 sentences
+- When multiple funds are in context: answer for **all** funds (one sentence per fund); `max_output_tokens` scales dynamically
 - Always append: "Last updated from sources."
 - Include `sources` array with citation URLs
 - No advice, no recommendations
@@ -319,39 +328,40 @@ PII validation is applied **only to the user's chat input**, not to stored/scrap
 phase5_frontend/
 ├── index.html
 ├── styles.css
-├── app.js                 # Chat logic, API calls
+├── app.js                 # Chat logic, API calls, fund filter, theme toggle
 ├── assets/
+│   ├── indmoney-logo-dark.svg   # IndMoney logo for dark mode
+│   └── indmoney-logo-light.svg  # IndMoney logo for light mode
 └── config.js              # API base URL
 ```
 
-### UI Layout (Tiny)
+### UI Layout
 
 ```
-┌─────────────────────────────────────────┐
-│  IndMoney Mutual Fund Facts Bot          │
-├─────────────────────────────────────────┤
-│  Facts-only. No investment advice.       │
-│                                         │
-│  Welcome! Ask factual questions about    │
-│  HDFC mutual funds (NAV, AUM, etc.).     │
-│                                         │
-│  Example questions:                      │
-│  • What is the NAV of HDFC Large Cap?   │
-│  • AUM of HDFC Flexi Cap Fund?          │
-│  • Expense ratio of HDFC ELSS?          │
-│                                         │
-│  [Input box]                    [Send]   │
-│                                         │
-│  [Chat messages with citation links]     │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│  [INDmoney logo]  Mutual Fund Facts    [🌙/☀ toggle] │
+├──────────┬───────────────────────────────────────────┤
+│ Filter   │  AI disclaimer banner                     │
+│ by fund  │  Example questions (3 buttons)            │
+│ ☑ All    │                                           │
+│ ☑ Large  │  [Chat messages with citation links]      │
+│ ☑ Flexi  │                                           │
+│ ☑ ELSS   │  [Input box]                     [Send]   │
+│ ...      │                                           │
+│          │  How it works (footer)                     │
+└──────────┴───────────────────────────────────────────┘
 ```
 
-### Requirements
+### Features
 
-- Welcome line + 3 example questions
-- Note: **"Facts-only. No investment advice."**
-- Every answer shows **citation links** clearly
-- No advice, no opinion prompts
+- **IndMoney logo** in header (auto-switches dark/light variant)
+- **Dark/light mode toggle** — persists preference in localStorage
+- **Fund filter** (sidebar) — multi-select checkboxes with "All Funds" toggle; populated dynamically from `GET /funds`; sends `fund_ids` with each query for targeted retrieval
+- **"How it works"** — footer section below chat area
+- 3 example query buttons
+- AI disclaimer banner
+- Citation links on every answer
+- Rate limit and refusal styling
 
 ---
 
