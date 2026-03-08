@@ -13,9 +13,10 @@ This document describes the phase-wise architecture for a **facts-only** RAG cha
 | **Facts-only** | No investment advice; refuse opinionated questions |
 | **Privacy** | Never accept/store PII from **user input** (PAN, Aadhaar, account numbers, OTPs, emails, phone numbers); reject such queries. Scraped fund data is not PII-filtered when stored. |
 | **No computations** | Do not compute/compare returns; return source URL when asked |
-| **Concise answers** | ≤3 sentences per response |
+| **Concise answers** | Single-fund: ≤3 sentences; multi-fund: one sentence per fund |
 | **Attribution** | Every answer: "Last updated from sources" + citation links |
 | **Transparency** | UI clearly states facts-only, no advice |
+| **Stateless** | Each query is independent; no conversation memory across turns |
 
 ---
 
@@ -302,9 +303,11 @@ PII validation is applied **only to the user's chat input**, not to stored/scrap
 
 ### Fund Filtering (Multi-select)
 
-The `/chat` endpoint accepts an optional `fund_ids` array. When provided, ChromaDB retrieval is filtered to only those funds using a `$in` metadata filter on `fund_id`. This allows users to select specific funds from the UI and ask generic questions like "What is the expense ratio?" without needing to include the fund name in the query.
+The `/chat` endpoint accepts an optional `fund_ids` array. When multiple funds are selected (or all funds), the retriever queries ChromaDB **separately for each fund** (per-fund retrieval), guaranteeing that every selected fund is represented in the retrieved context. Results are merged and sorted by relevance before being sent to the LLM.
 
 A **GET /funds** endpoint returns the list of available funds (`id` + `name`) for the frontend to populate the filter dynamically.
+
+The frontend enforces a **maximum of 3 funds** selected at a time. When 3 are checked, remaining unchecked funds are disabled. A client-side fund name detector warns users if their query mentions a fund that isn't currently selected in the filter.
 
 ### Response Rules
 
@@ -328,7 +331,7 @@ A **GET /funds** endpoint returns the list of available funds (`id` + `name`) fo
 phase5_frontend/
 ├── index.html
 ├── styles.css
-├── app.js                 # Chat logic, API calls, fund filter, theme toggle
+├── app.js                 # Chat logic, API calls, fund filter (max 3), fund mismatch detection, thinking timer
 ├── assets/
 │   ├── indmoney-logo-dark.svg   # IndMoney logo for dark mode
 │   └── indmoney-logo-light.svg  # IndMoney logo for light mode
@@ -338,30 +341,35 @@ phase5_frontend/
 ### UI Layout
 
 ```
-┌──────────────────────────────────────────────────────┐
-│  [INDmoney logo]  Mutual Fund Facts    [🌙/☀ toggle] │
-├──────────┬───────────────────────────────────────────┤
-│ Filter   │  AI disclaimer banner                     │
-│ by fund  │  Example questions (3 buttons)            │
-│ ☑ All    │                                           │
-│ ☑ Large  │  [Chat messages with citation links]      │
-│ ☑ Flexi  │                                           │
-│ ☑ ELSS   │  [Input box]                     [Send]   │
-│ ...      │                                           │
-│          │  How it works (footer)                     │
-└──────────┴───────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│  [INDmoney logo]  Mutual Fund Facts   [notices]  [🌙/☀ toggle]│
+├──────────┬─────────────────────────────────────────────────────┤
+│ Filter   │  Select fund(s), then ask a question about them.   │
+│ by fund  │  [NAV?] [AUM?] [Expense ratio?]                    │
+│ (max 3)  │                                                    │
+│ ☐ Large  │  [Chat messages with citation links]               │
+│ ☑ Flexi  │  Thinking... (5s)                                  │
+│ ☐ ELSS   │                                                    │
+│ ...      │  [Input box]              [Send] [New Chat]        │
+│          │                                                    │
+│          │  How it works (footer)                              │
+└──────────┴─────────────────────────────────────────────────────┘
 ```
 
 ### Features
 
 - **IndMoney logo** in header (auto-switches dark/light variant)
 - **Dark/light mode toggle** — persists preference in localStorage
-- **Fund filter** (sidebar) — multi-select checkboxes with "All Funds" toggle; populated dynamically from `GET /funds`; sends `fund_ids` with each query for targeted retrieval
+- **Fund filter** (sidebar) — max 3 funds at a time; populated dynamically from `GET /funds`; sends `fund_ids` with each query for per-fund retrieval
+- **Fund mismatch warning** — client-side detection warns if query mentions a fund not selected in the filter
+- **Thinking indicator** — pulsing "Thinking... (Ns)" with elapsed seconds while waiting for response
+- **New Chat button** — clears the chat display
+- **Header notices** — AI disclaimer and free-tier usage note shown in top-right header area
 - **"How it works"** — footer section below chat area
 - 3 example query buttons
-- AI disclaimer banner
 - Citation links on every answer
 - Rate limit and refusal styling
+- Auto-dismiss of fund warnings when a fund is selected
 
 ---
 

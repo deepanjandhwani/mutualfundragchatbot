@@ -141,6 +141,25 @@ body {
   line-height: 1;
 }
 
+.header-notices {
+  margin-left: auto;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.notice-ai,
+.notice-free-tier {
+  margin: 0;
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.notice-ai {
+  color: var(--premium);
+}
+
 .header-titles {
   flex: 1;
   min-width: 0;
@@ -191,6 +210,16 @@ body {
   .header {
     padding: 1rem 1rem;
     gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .header-notices {
+    width: 100%;
+    text-align: left;
+    margin-left: 0;
+  }
+  .notice-ai,
+  .notice-free-tier {
+    white-space: normal;
   }
   .header h1 {
     font-size: 1.2rem;

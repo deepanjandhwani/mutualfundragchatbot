@@ -44,6 +44,40 @@ function loadDataLastUpdated() {
 /* ── Fund filter (multi-select checkboxes) ── */
 
 var MAX_FUND_SELECT = 3;
+var _fundKeywords = [];
+
+var _KEYWORD_MAP = [
+  { keywords: ["large and mid cap", "large & mid cap"], id: "2874" },
+  { keywords: ["largemidcap 250", "large midcap 250", "largemidcap", "nifty largemidcap"], id: "1047724" },
+  { keywords: ["nifty next 50", "next 50"], id: "1040010" },
+  { keywords: ["large cap", "largecap"], id: "2989" },
+  { keywords: ["flexi cap", "flexicap"], id: "3184" },
+  { keywords: ["elss", "tax saver", "taxsaver", "elss tax"], id: "2685" },
+  { keywords: ["mid cap", "midcap"], id: "3097" },
+  { keywords: ["housing"], id: "9006" },
+];
+
+function detectMentionedFundIds(query) {
+  var q = query.toLowerCase();
+  var found = {};
+  for (var i = 0; i < _KEYWORD_MAP.length; i++) {
+    var entry = _KEYWORD_MAP[i];
+    for (var j = 0; j < entry.keywords.length; j++) {
+      if (q.indexOf(entry.keywords[j]) !== -1) {
+        found[entry.id] = true;
+        break;
+      }
+    }
+  }
+  return Object.keys(found);
+}
+
+function getFundNameById(id) {
+  for (var i = 0; i < _fundKeywords.length; i++) {
+    if (_fundKeywords[i].id === id) return _fundKeywords[i].name;
+  }
+  return id;
+}
 
 function loadFundFilter() {
   var base = getApiBase();
@@ -53,6 +87,9 @@ function loadFundFilter() {
   fetch(base + "/funds")
     .then(function (res) { return res.ok ? res.json() : []; })
     .then(function (funds) {
+      _fundKeywords = funds.map(function (f) {
+        return { id: f.id, name: f.name.replace(/ Direct (Plan )?Growth$/, "") };
+      });
       listEl.innerHTML = "";
       funds.forEach(function (fund) {
         var label = document.createElement("label");
@@ -70,6 +107,7 @@ function loadFundFilter() {
 
         cb.addEventListener("change", function () {
           enforceFundLimit();
+          dismissFundWarnings();
         });
       });
     })
@@ -89,6 +127,19 @@ function enforceFundLimit() {
   for (var i = 0; i < cbs.length; i++) {
     if (!cbs[i].checked) {
       cbs[i].disabled = checkedCount >= MAX_FUND_SELECT;
+    }
+  }
+}
+
+function dismissFundWarnings() {
+  var ids = getSelectedFundIds();
+  if (!ids || ids.length === 0) return;
+  var msgs = document.querySelectorAll(".message.bot.refused");
+  for (var i = 0; i < msgs.length; i++) {
+    var txt = msgs[i].textContent || "";
+    if (txt.indexOf("select at least one fund") !== -1 ||
+        txt.indexOf("not selected in the filter") !== -1) {
+      msgs[i].remove();
     }
   }
 }
@@ -212,6 +263,18 @@ function runApp() {
     var fundIds = getSelectedFundIds();
     if (!fundIds || fundIds.length === 0) {
       addMessage("bot", "Please select at least one fund (up to 3) from the filter.", { refused: true });
+      return;
+    }
+
+    var mentioned = detectMentionedFundIds(message);
+    var unselected = mentioned.filter(function (id) { return fundIds.indexOf(id) === -1; });
+    if (unselected.length > 0) {
+      var names = unselected.map(function (id) { return getFundNameById(id); });
+      addMessage("bot",
+        "Your question mentions " + names.join(", ") +
+        " which is not selected in the filter. Please select it from the filter for accurate results.",
+        { refused: true }
+      );
       return;
     }
 
