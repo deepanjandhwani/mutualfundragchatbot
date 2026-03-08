@@ -79,6 +79,43 @@ function getFundNameById(id) {
   return id;
 }
 
+var _FALLBACK_FUNDS = [
+  { id: "2989", name: "HDFC Large Cap Fund Direct Plan Growth" },
+  { id: "3184", name: "HDFC Flexi Cap Fund Direct Plan Growth" },
+  { id: "2685", name: "HDFC ELSS Tax Saver Direct Plan Growth" },
+  { id: "1040010", name: "HDFC Nifty Next 50 Index Fund Direct Growth" },
+  { id: "3097", name: "HDFC Mid Cap Fund Direct Plan Growth" },
+  { id: "9006", name: "HDFC Housing Opportunities Fund Direct Growth" },
+  { id: "1047724", name: "HDFC Nifty LargeMidcap 250 Index Fund Direct Growth" },
+  { id: "2874", name: "HDFC Large and Mid Cap Fund Direct Growth" },
+];
+
+function _renderFundCheckboxes(funds, listEl) {
+  _fundKeywords = funds.map(function (f) {
+    return { id: f.id, name: f.name.replace(/ Direct (Plan )?Growth$/, "") };
+  });
+  listEl.innerHTML = "";
+  funds.forEach(function (fund) {
+    var label = document.createElement("label");
+    label.className = "fund-checkbox";
+    var cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.className = "fund-cb";
+    cb.value = fund.id;
+    cb.checked = false;
+    var span = document.createElement("span");
+    span.textContent = fund.name.replace(/ Direct (Plan )?Growth$/, "");
+    label.appendChild(cb);
+    label.appendChild(span);
+    listEl.appendChild(label);
+
+    cb.addEventListener("change", function () {
+      enforceFundLimit();
+      dismissFundWarnings();
+    });
+  });
+}
+
 function loadFundFilter() {
   var base = getApiBase();
   var listEl = document.getElementById("fund-checkbox-list");
@@ -87,32 +124,11 @@ function loadFundFilter() {
   fetch(base + "/funds")
     .then(function (res) { return res.ok ? res.json() : []; })
     .then(function (funds) {
-      _fundKeywords = funds.map(function (f) {
-        return { id: f.id, name: f.name.replace(/ Direct (Plan )?Growth$/, "") };
-      });
-      listEl.innerHTML = "";
-      funds.forEach(function (fund) {
-        var label = document.createElement("label");
-        label.className = "fund-checkbox";
-        var cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.className = "fund-cb";
-        cb.value = fund.id;
-        cb.checked = false;
-        var span = document.createElement("span");
-        span.textContent = fund.name.replace(/ Direct (Plan )?Growth$/, "");
-        label.appendChild(cb);
-        label.appendChild(span);
-        listEl.appendChild(label);
-
-        cb.addEventListener("change", function () {
-          enforceFundLimit();
-          dismissFundWarnings();
-        });
-      });
+      if (!funds || funds.length === 0) funds = _FALLBACK_FUNDS;
+      _renderFundCheckboxes(funds, listEl);
     })
     .catch(function () {
-      listEl.innerHTML = '<span class="fund-filter-error">Could not load funds.</span>';
+      _renderFundCheckboxes(_FALLBACK_FUNDS, listEl);
     });
 }
 
