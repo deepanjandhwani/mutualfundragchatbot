@@ -251,8 +251,10 @@ function runApp() {
         : "Ask about the selected fund(s)...";
     }
     if (sendBtn) {
-      sendBtn.disabled = count === 0;
-      sendBtn.title = count === 0 ? "Select at least one fund to send." : "";
+      // Keep send clickable so users get explicit feedback when no funds are selected.
+      sendBtn.disabled = false;
+      sendBtn.title = count === 0 ? "Select at least one fund." : "";
+      sendBtn.classList.toggle("needs-fund", count === 0);
     }
     updateFundButtonLabel(count);
   }
