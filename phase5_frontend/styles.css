@@ -986,6 +986,51 @@ body {
 
 /* Final mobile overrides kept at end to beat base rules above */
 @media (max-width: 768px) {
+  .header {
+    padding: 0.65rem 0.75rem;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .header-logos {
+    gap: 0.45rem;
+  }
+
+  .logo-wrap-indmoney {
+    width: 102px;
+    height: 30px;
+  }
+
+  .header h1 {
+    font-size: 1.05rem;
+    line-height: 1.2;
+  }
+
+  .header-titles {
+    order: 2;
+    width: auto;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .header-notices,
+  .tagline-premium,
+  .disclaimer-risk,
+  .data-last-updated {
+    display: none;
+  }
+
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+    order: 3;
+    margin-left: auto;
+  }
+
+  .main {
+    padding-top: 0.55rem;
+  }
+
   .welcome,
   .how-it-works {
     display: none;
@@ -1099,6 +1144,25 @@ body {
 }
 
 @media (max-width: 480px) {
+  .header {
+    padding: 0.55rem 0.65rem;
+    gap: 0.4rem;
+  }
+
+  .logo-wrap-indmoney {
+    width: 90px;
+    height: 26px;
+  }
+
+  .header h1 {
+    font-size: 0.98rem;
+  }
+
+  .theme-toggle {
+    width: 34px;
+    height: 34px;
+  }
+
   .chat {
     min-height: 72dvh;
   }
