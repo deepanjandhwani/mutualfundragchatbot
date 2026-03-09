@@ -45,6 +45,7 @@ function loadDataLastUpdated() {
 
 var MAX_FUND_SELECT = 3;
 var _fundKeywords = [];
+var _onFundSelectionChanged = null;
 
 var _KEYWORD_MAP = [
   { keywords: ["large and mid cap", "large & mid cap"], id: "2874" },
@@ -77,6 +78,30 @@ function getFundNameById(id) {
     if (_fundKeywords[i].id === id) return _fundKeywords[i].name;
   }
   return id;
+}
+
+function getSelectedFundNames(ids) {
+  if (!ids || ids.length === 0) return [];
+  var names = [];
+  for (var i = 0; i < ids.length; i++) {
+    names.push(getFundNameById(ids[i]));
+  }
+  return names;
+}
+
+function renderSelectionNameChips(container, names) {
+  if (!container) return;
+  container.innerHTML = "";
+  if (!names || names.length === 0) {
+    container.textContent = "No funds selected.";
+    return;
+  }
+  for (var i = 0; i < names.length; i++) {
+    var chip = document.createElement("span");
+    chip.className = "fund-name-chip fund-name-chip-" + (i % 3);
+    chip.textContent = names[i];
+    container.appendChild(chip);
+  }
 }
 
 var _FALLBACK_FUNDS = [
@@ -112,8 +137,11 @@ function _renderFundCheckboxes(funds, listEl) {
     cb.addEventListener("change", function () {
       enforceFundLimit();
       dismissFundWarnings();
+      if (_onFundSelectionChanged) _onFundSelectionChanged();
     });
   });
+  enforceFundLimit();
+  if (_onFundSelectionChanged) _onFundSelectionChanged();
 }
 
 function loadFundFilter() {
@@ -174,16 +202,91 @@ function getSelectedFundIds() {
 /* ── Main app ── */
 
 function runApp() {
-  loadDataLastUpdated();
-  loadFundFilter();
-
   const messagesEl = document.getElementById("messages");
   const form = document.getElementById("chat-form");
   const input = document.getElementById("message-input");
   const sendBtn = document.getElementById("send-btn");
   const newChatBtn = document.getElementById("new-chat-btn");
+  const selectionChip = document.getElementById("selection-chip");
+  const selectionNames = document.getElementById("selection-names");
+  const tipToast = document.getElementById("selection-tip-toast");
+  const openFundsBtn = document.getElementById("open-funds-btn");
+  const closeFundsBtn = document.getElementById("close-funds-btn");
+  const mobileSheetBackdrop = document.getElementById("mobile-sheet-backdrop");
 
+  function isMobileViewport() {
+    return window.innerWidth <= 768;
+  }
 
+  function closeMobileFundSheet() {
+    document.body.classList.remove("mobile-sheet-open");
+    if (mobileSheetBackdrop) mobileSheetBackdrop.classList.add("hidden");
+  }
+
+  function openMobileFundSheet() {
+    if (!isMobileViewport()) return;
+    document.body.classList.add("mobile-sheet-open");
+    if (mobileSheetBackdrop) mobileSheetBackdrop.classList.remove("hidden");
+  }
+
+  function updateFundButtonLabel(count) {
+    if (!openFundsBtn) return;
+    openFundsBtn.textContent = "Select funds (" + count + "/" + MAX_FUND_SELECT + ")";
+  }
+
+  function updateSelectionStateUI() {
+    var ids = getSelectedFundIds() || [];
+    var names = getSelectedFundNames(ids);
+    var count = ids.length;
+    if (selectionChip) {
+      selectionChip.textContent = "Selected: " + count + "/" + MAX_FUND_SELECT;
+      selectionChip.classList.toggle("zero", count === 0);
+    }
+    if (selectionNames) {
+      renderSelectionNameChips(selectionNames, names);
+    }
+    if (input) {
+      input.placeholder = count === 0
+        ? "Select fund(s) first, then ask a question..."
+        : "Ask about the selected fund(s)...";
+    }
+    if (sendBtn) {
+      sendBtn.disabled = count === 0;
+      sendBtn.title = count === 0 ? "Select at least one fund to send." : "";
+    }
+    updateFundButtonLabel(count);
+  }
+
+  function showSelectionTipOnce() {
+    if (!tipToast) return;
+    if (localStorage.getItem("selection_tip_seen_v1") === "1") return;
+    tipToast.classList.remove("hidden");
+    localStorage.setItem("selection_tip_seen_v1", "1");
+    setTimeout(function () {
+      tipToast.classList.add("hidden");
+    }, 4500);
+  }
+
+  _onFundSelectionChanged = updateSelectionStateUI;
+  loadDataLastUpdated();
+  loadFundFilter();
+  updateSelectionStateUI();
+  showSelectionTipOnce();
+
+  if (openFundsBtn) {
+    openFundsBtn.addEventListener("click", openMobileFundSheet);
+  }
+  if (closeFundsBtn) {
+    closeFundsBtn.addEventListener("click", closeMobileFundSheet);
+  }
+  if (mobileSheetBackdrop) {
+    mobileSheetBackdrop.addEventListener("click", closeMobileFundSheet);
+  }
+  window.addEventListener("resize", function () {
+    if (!isMobileViewport()) {
+      closeMobileFundSheet();
+    }
+  });
 
   function addMessage(role, content, options = {}) {
     const div = document.createElement("div");
@@ -195,6 +298,13 @@ function runApp() {
     contentEl.className = "content";
     contentEl.textContent = content;
     div.appendChild(contentEl);
+
+    if (options.answeredFor && options.answeredFor.length > 0) {
+      const scope = document.createElement("p");
+      scope.className = "answer-scope";
+      scope.textContent = "Answered for: " + options.answeredFor.join(", ");
+      div.appendChild(scope);
+    }
 
     if (options.sources && options.sources.length > 0) {
       const title = document.createElement("p");
@@ -268,7 +378,11 @@ function runApp() {
   }
 
   function setLoading(loading) {
-    sendBtn.disabled = loading;
+    if (loading) {
+      sendBtn.disabled = true;
+    } else {
+      updateSelectionStateUI();
+    }
     input.disabled = loading;
   }
 
@@ -281,6 +395,7 @@ function runApp() {
       addMessage("bot", "Please select at least one fund (up to 3) from the filter.", { refused: true });
       return;
     }
+    var selectedNames = getSelectedFundNames(fundIds);
 
     var mentioned = detectMentionedFundIds(message);
     var unselected = mentioned.filter(function (id) { return fundIds.indexOf(id) === -1; });
@@ -288,13 +403,14 @@ function runApp() {
       var names = unselected.map(function (id) { return getFundNameById(id); });
       addMessage("bot",
         "Your question mentions " + names.join(", ") +
-        " which is not selected in the filter. Please select it from the filter for accurate results.",
+        " which is not selected in the filter. Selected funds are: " + selectedNames.join(", ") + ". Please select the mentioned fund for accurate results.",
         { refused: true }
       );
       return;
     }
 
     addMessage("user", message);
+    closeMobileFundSheet();
     input.value = "";
     setLoading(true);
     clearStatus();
@@ -322,6 +438,7 @@ function runApp() {
           refused: data.refused === true,
           refusalReason: data.refusal_reason || null,
           rateLimit: isRateLimit,
+          answeredFor: selectedNames,
         });
       })
       .catch(function (err) {

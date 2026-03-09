@@ -39,10 +39,15 @@
     <div class="layout">
       <aside class="sidebar">
         <section class="funds-section">
+          <div class="mobile-sheet-head">
+            <p class="mobile-sheet-title">Select Funds</p>
+            <button type="button" id="close-funds-btn" class="close-funds-btn" aria-label="Close fund selector">Done</button>
+          </div>
           <details class="funds-details" id="funds-details">
             <summary class="sidebar-summary">Filter by fund</summary>
             <div class="fund-filter" id="fund-filter">
               <p class="fund-filter-hint">Select up to 3 funds at a time.</p>
+              <p class="fund-filter-scope-note">Only selected funds are used for retrieval and answers.</p>
               <div class="fund-checkbox-list" id="fund-checkbox-list">
                 <!-- Populated dynamically from /funds API -->
               </div>
@@ -52,6 +57,7 @@
       </aside>
 
       <main class="main">
+        <button type="button" id="open-funds-btn" class="open-funds-btn">Select funds (0/3)</button>
         <section class="welcome">
           <p>Select fund(s) from the filter, then ask a question about them.</p>
           <div class="example-questions">
@@ -62,7 +68,12 @@
         </section>
 
         <section class="chat" aria-live="polite">
+          <div class="selection-summary" id="selection-summary">
+            <span class="selection-chip" id="selection-chip">Selected: 0/3</span>
+            <span class="selection-names" id="selection-names">No funds selected.</span>
+          </div>
           <div id="messages" class="messages"></div>
+          <p class="input-scope-note" id="input-scope-note">Responses are based only on selected fund(s).</p>
           <form id="chat-form" class="input-row">
             <input
               id="message-input"
@@ -74,6 +85,9 @@
             <button type="submit" id="send-btn">Send</button>
             <button type="button" id="new-chat-btn" class="new-chat-btn" title="New Chat">New Chat</button>
           </form>
+          <p class="selection-tip-toast hidden" id="selection-tip-toast" role="status" aria-live="polite">
+            Tip: This chatbot answers only for selected fund(s).
+          </p>
         </section>
 
         <footer class="how-it-works">
@@ -86,6 +100,7 @@
         </footer>
       </main>
     </div>
+    <div id="mobile-sheet-backdrop" class="mobile-sheet-backdrop hidden" aria-hidden="true"></div>
   </div>
   <script src="config.js"></script>
   <script src="app.js"></script>

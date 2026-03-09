@@ -39,9 +39,11 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed phase-wise architecture, d
 - **Per-fund retrieval** — queries ChromaDB separately for each selected fund, guaranteeing every fund is represented in results
 - **Fund alias expansion** — short names like "ELSS" or "Flexi Cap" are automatically expanded to full canonical names before retrieval
 - **Fund mismatch warning** — two-layer check (frontend + backend) warns if query mentions a fund not currently selected in the filter; no LLM call wasted
+- **Latency guardrails** — backend preloads embedding/Chroma on startup, applies Gemini timeout, and reduces effective `top_k` for 2/3-fund queries
 - **Dark/light theme** — toggle in header, preference persisted in localStorage; IndMoney logo auto-switches variant
 - **Thinking indicator** — pulsing timer shows elapsed seconds while waiting for a response
 - **New Chat button** — clears the chat display
+- **Mobile-first UX** — sticky header + composer, larger touch targets/typography, and a bottom-sheet fund selector with backdrop + "Done"
 - **Stateless** — each query is independent; no conversation memory
 - **Dynamic response scaling** — multi-fund queries get one sentence per fund with scaled token limits; single-fund queries get ≤3 sentences
 
@@ -88,6 +90,7 @@ Secrets are loaded from a `.env` file in the project root (do not commit it).
 1. Copy the template: `cp .env.example .env`
 2. Edit `.env` and set your keys, e.g.:
    - **GEMINI_API_KEY** — Required for Phase 4 (RAG). Get a key at [Google AI Studio](https://aistudio.google.com/apikey). Optional: **GEMINI_MODEL** (default: `gemini-2.5-flash-lite`).
+   - Optional latency overrides: **GEMINI_TIMEOUT_SECONDS** (default `10`), **TOP_K_WHEN_2_FUNDS** (default `12`), **TOP_K_WHEN_3_FUNDS** (default `9`).
 
 The backend (Phase 4) reads `GEMINI_API_KEY` via `os.getenv` or `python-dotenv`. Keep `.env` in `.gitignore`.
 
@@ -105,6 +108,7 @@ The backend (Phase 4) reads `GEMINI_API_KEY` via `os.getenv` or `python-dotenv`.
 2. Open `phase5_frontend/index.html` in a browser (e.g. via a local server to avoid CORS: `cd phase5_frontend && python -m http.server 3000` then open `http://localhost:3000`).
 3. If the backend runs on another port, set `API_BASE_URL` in `phase5_frontend/config.js` (e.g. `http://127.0.0.1:8002`).
 4. The UI shows **"Data last updated: &lt;date&gt;"** when the Phase 6 pipeline has been run; that date is when data was last fetched from the URLs.
+5. On mobile, use **Select funds (x/3)** to open the fund filter bottom sheet and close it with **Done**.
 
 ### Running the scheduler (Phase 6)
 

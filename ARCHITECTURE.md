@@ -218,6 +218,8 @@ phase3_embeddings/
 - **Free-tier limits:** 1,000 requests/day, 250K tokens/minute, no daily token cap
 - **Usage:** In Phase 4, retrieved chunks + user query + system prompt are sent to Gemini to generate the factual answer (≤3 sentences, with attribution).
 - **Config:** Model name in `phase4_backend/config.py`. API key from **environment** (see Environment Variables).
+- **Latency controls:** `GEMINI_TIMEOUT_SECONDS` (default `10`) fails fast when the model is unreachable; `TOP_K_WHEN_2_FUNDS` and `TOP_K_WHEN_3_FUNDS` reduce effective retrieval context for multi-fund queries.
+- **Startup warmup:** backend preloads the embedding model and opens Chroma collection on app startup to avoid first-request cold-start delay.
 
 ### Components
 
@@ -362,10 +364,12 @@ phase5_frontend/
 - **IndMoney logo** in header (auto-switches dark/light variant)
 - **Dark/light mode toggle** — persists preference in localStorage
 - **Fund filter** (sidebar) — max 3 funds at a time; populated dynamically from `GET /funds`; sends `fund_ids` with each query for per-fund retrieval
+- **Mobile bottom-sheet filter** — on small screens, fund selector opens as a modal bottom sheet with backdrop, "Done" action, and compact touch-first controls
 - **Fund mismatch warning** — client-side detection warns if query mentions a fund not selected in the filter
 - **Thinking indicator** — pulsing "Thinking... (Ns)" with elapsed seconds while waiting for response
 - **New Chat button** — clears the chat display
 - **Header notices** — AI disclaimer and free-tier usage note shown in top-right header area
+- **Mobile readability upgrades** — sticky header/composer, larger input/buttons, larger chat typography and source labels
 - **"How it works"** — footer section below chat area
 - 3 example query buttons
 - Citation links on every answer

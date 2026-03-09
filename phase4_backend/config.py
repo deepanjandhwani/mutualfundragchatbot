@@ -28,3 +28,11 @@ RETRIEVAL_TOP_K = 16
 MAX_ANSWER_SENTENCES = 3
 # Cap sources shown in response (retrieved list is relevance-ordered; we show first N unique URLs)
 MAX_SOURCES_DISPLAY = 10
+
+# LLM latency guardrails
+# Keep local UX snappy if Gemini is unreachable: fail fast by default.
+GEMINI_TIMEOUT_SECONDS = int(os.getenv("GEMINI_TIMEOUT_SECONDS", "10"))
+
+# Effective context cap for multi-fund queries to keep latency stable.
+TOP_K_WHEN_2_FUNDS = int(os.getenv("TOP_K_WHEN_2_FUNDS", "12"))
+TOP_K_WHEN_3_FUNDS = int(os.getenv("TOP_K_WHEN_3_FUNDS", "9"))
