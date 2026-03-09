@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Build frontend for Vercel: inject API_BASE_URL into config and copy to public/.
-# Set API_BASE_URL in Vercel project Environment Variables to your backend URL (e.g. https://your-app.up.railway.app).
+# For same-origin proxy (avoids DNS/CORS issues): set API_BASE_URL="/api" in Vercel env.
+# vercel.json rewrites /api/* to the Railway backend.
 
 set -e
-API_BASE_URL="${API_BASE_URL:-}"
+API_BASE_URL="${API_BASE_URL:-/api}"
 # Escape for use inside double quotes in JS
 ESCAPED=$(echo "$API_BASE_URL" | sed 's/\\/\\\\/g; s/"/\\"/g')
 mkdir -p public

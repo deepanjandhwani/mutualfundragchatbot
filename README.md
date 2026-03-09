@@ -141,7 +141,7 @@ On success, `shared/last_refresh.json` is written; the backend serves it via **G
 ### Frontend on Vercel
 
 1. In [Vercel](https://vercel.com), import the same GitHub repository.
-2. Add **API_BASE_URL** in Environment Variables and set it to your Railway backend URL (e.g. `https://your-app.up.railway.app`) with no trailing slash.
+2. Set **API_BASE_URL** to `/api` (or leave unset; it defaults to `/api`). This uses Vercel rewrites to proxy API calls through your domain, avoiding cross-origin DNS issues (`ERR_NAME_NOT_RESOLVED`) for users.
 3. Deploy. The build runs `scripts/build-vercel.sh`, which injects `API_BASE_URL` and copies `phase5_frontend/` to `public/`. Set **Output Directory** to `public` if required.
-4. The deployed site will serve the chat UI and call the Railway backend for `/chat`, `/meta`, `/funds`, and `/health`.
+4. The deployed site serves the chat UI; `/api/chat`, `/api/funds`, `/api/meta` are proxied to the Railway backend via `vercel.json` rewrites.
 
