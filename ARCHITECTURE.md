@@ -364,10 +364,10 @@ phase5_frontend/
 - **IndMoney logo** in header (auto-switches dark/light variant)
 - **Dark/light mode toggle** — persists preference in localStorage
 - **Fund filter** (sidebar) — select one or more funds (no cap); populated from `GET /funds`; sends `fund_ids` with each query for per-fund retrieval
-- **Mention-based scoping** — if the user mentions specific fund(s) in the question, only those funds are queried and answered for (even if different from filter selection)
+- **Mention-based scoping** — if the user mentions specific fund(s) in the question, only those funds are queried and answered for (even if different from filter selection); if none are mentioned and none are selected, all funds are used
 - **Mobile bottom-sheet filter** — on small screens, fund selector opens as a modal bottom sheet with backdrop, "Done" action, and compact touch-first controls
 - **Compact mobile header** — hides non-essential meta lines (tagline/disclaimer/notices) on small screens so chat remains visible above the fold
-- **No-fund send feedback** — send button stays actionable and returns an explicit message when no funds are selected
+- **No-fund availability message** — if no funds are configured at all, the chatbot shows a clear “no funds available” message instead of failing silently
 - **Thinking indicator** — pulsing "Thinking... (Ns)" with elapsed seconds while waiting for response
 - **New Chat button** — clears the chat display
 - **Header notices** — AI disclaimer and free-tier usage note shown in top-right header area

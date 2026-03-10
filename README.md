@@ -36,7 +36,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed phase-wise architecture, d
 ## Features
 
 - **Fund filter (no cap)** — sidebar checkboxes; select one or more funds; queries are scoped via per-fund ChromaDB retrieval
-- **Mention-based scoping** — if the question mentions specific fund(s), the answer is for those funds (even if different from filter); otherwise selected funds are used
+- **Mention-based scoping** — if the question mentions specific fund(s), the answer is for those funds (even if different from filter); otherwise selected funds are used; if neither, all funds are used
 - **Per-fund retrieval** — ChromaDB is queried separately per fund so each fund is represented in results
 - **Fund alias expansion** — short names like "ELSS" or "Flexi Cap" are expanded to full canonical names before retrieval
 - **Latency guardrails** — backend preloads embedding/Chroma on startup, applies Gemini timeout, and reduces effective `top_k` for 2/3-fund queries
@@ -44,7 +44,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed phase-wise architecture, d
 - **Thinking indicator** — pulsing timer shows elapsed seconds while waiting for a response
 - **New Chat button** — clears the chat display
 - **Mobile-first UX** — compact mobile header, sticky composer, larger touch targets/typography, and a bottom-sheet fund selector with backdrop + "Done"
-- **No-fund send feedback** — `Send` remains clickable and shows an explicit "select at least one fund" message instead of silent blocking
+- **No-fund availability message** — if no funds are configured at all, the chatbot shows a clear “no funds available” message instead of failing silently
 - **Stateless** — each query is independent; no conversation memory
 - **Dynamic response scaling** — multi-fund queries get one sentence per fund with scaled token limits; single-fund queries get ≤3 sentences
 

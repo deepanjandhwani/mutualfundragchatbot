@@ -44,6 +44,7 @@ function loadDataLastUpdated() {
 /* ── Fund filter (multi-select checkboxes) ── */
 
 var _fundKeywords = [];
+var _allFundIds = [];
 var _onFundSelectionChanged = null;
 
 var _KEYWORD_MAP = [
@@ -118,8 +119,8 @@ function _renderFundCheckboxes(funds, listEl) {
   _fundKeywords = funds.map(function (f) {
     return { id: f.id, name: f.name.replace(/ Direct (Plan )?Growth$/, "") };
   });
+  _allFundIds = funds.map(function (f) { return f.id; });
   listEl.innerHTML = "";
-
   var selectAllLabel = document.createElement("label");
   selectAllLabel.className = "fund-checkbox fund-checkbox-select-all";
   var selectAllCb = document.createElement("input");
@@ -420,16 +421,18 @@ function runApp() {
     var mentioned = detectMentionedFundIds(message);
 
     // Use funds mentioned in the question if any; otherwise use selected funds.
-    // This allows answering about a different fund than the one selected in the filter.
+    // If neither are present, fall back to all available funds.
     var effectiveFundIds = [];
     if (mentioned.length > 0) {
       effectiveFundIds = mentioned;
     } else if (fundIds.length > 0) {
       effectiveFundIds = fundIds;
+    } else if (_allFundIds && _allFundIds.length > 0) {
+      effectiveFundIds = _allFundIds.slice();
     }
 
     if (effectiveFundIds.length === 0) {
-      addMessage("bot", "Please select at least one fund from the filter, or mention a fund in your question.", { refused: true });
+      addMessage("bot", "No funds are currently available for this chatbot. Please try again later.", { refused: true });
       return;
     }
 
