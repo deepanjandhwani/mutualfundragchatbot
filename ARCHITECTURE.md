@@ -310,7 +310,7 @@ The `/chat` endpoint accepts an optional `fund_ids` array. When multiple funds a
 
 A **GET /funds** endpoint returns the list of available funds (`id` + `name`) for the frontend to populate the filter dynamically.
 
-The frontend enforces a **maximum of 3 funds** selected at a time. When 3 are checked, remaining unchecked funds are disabled. A **two-layer fund mismatch check** (client-side + backend) warns users if their query mentions a fund that isn't currently selected, preventing wasted LLM calls.
+The frontend allows **any number of funds** to be selected (no cap). If the user's question **mentions** specific fund(s), those mentioned funds are used for retrieval and the answer—even if different from the filter selection—so the app answers for the fund the user asked about. If no fund is mentioned, the selected filter funds are used.
 
 ### Response Rules
 
@@ -334,7 +334,7 @@ The frontend enforces a **maximum of 3 funds** selected at a time. When 3 are ch
 phase5_frontend/
 ├── index.html
 ├── styles.css
-├── app.js                 # Chat logic, API calls, fund filter (max 3), mismatch detection, thinking timer, explicit no-fund send feedback
+├── app.js                 # Chat logic, API calls, fund filter (no cap), mention-based scoping, thinking timer, no-fund send feedback
 ├── assets/
 │   ├── indmoney-logo-dark.svg   # IndMoney logo for dark mode
 │   └── indmoney-logo-light.svg  # IndMoney logo for light mode
@@ -349,7 +349,7 @@ phase5_frontend/
 ├──────────┬─────────────────────────────────────────────────────┤
 │ Filter   │  Select fund(s), then ask a question about them.   │
 │ by fund  │  [NAV?] [AUM?] [Expense ratio?]                    │
-│ (max 3)  │                                                    │
+│ (multi)  │                                                    │
 │ ☐ Large  │  [Chat messages with citation links]               │
 │ ☑ Flexi  │  Thinking... (5s)                                  │
 │ ☐ ELSS   │                                                    │
@@ -363,10 +363,10 @@ phase5_frontend/
 
 - **IndMoney logo** in header (auto-switches dark/light variant)
 - **Dark/light mode toggle** — persists preference in localStorage
-- **Fund filter** (sidebar) — max 3 funds at a time; populated dynamically from `GET /funds`; sends `fund_ids` with each query for per-fund retrieval
+- **Fund filter** (sidebar) — select one or more funds (no cap); populated from `GET /funds`; sends `fund_ids` with each query for per-fund retrieval
+- **Mention-based scoping** — if the user mentions specific fund(s) in the question, only those funds are queried and answered for (even if different from filter selection)
 - **Mobile bottom-sheet filter** — on small screens, fund selector opens as a modal bottom sheet with backdrop, "Done" action, and compact touch-first controls
 - **Compact mobile header** — hides non-essential meta lines (tagline/disclaimer/notices) on small screens so chat remains visible above the fold
-- **Fund mismatch warning** — client-side detection warns if query mentions a fund not selected in the filter
 - **No-fund send feedback** — send button stays actionable and returns an explicit message when no funds are selected
 - **Thinking indicator** — pulsing "Thinking... (Ns)" with elapsed seconds while waiting for response
 - **New Chat button** — clears the chat display
