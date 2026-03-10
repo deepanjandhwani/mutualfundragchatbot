@@ -334,7 +334,7 @@ The frontend enforces a **maximum of 3 funds** selected at a time. When 3 are ch
 phase5_frontend/
 ├── index.html
 ├── styles.css
-├── app.js                 # Chat logic, API calls, fund filter (max 3), fund mismatch detection, thinking timer
+├── app.js                 # Chat logic, API calls, fund filter (max 3), mismatch detection, thinking timer, explicit no-fund send feedback
 ├── assets/
 │   ├── indmoney-logo-dark.svg   # IndMoney logo for dark mode
 │   └── indmoney-logo-light.svg  # IndMoney logo for light mode
@@ -365,7 +365,9 @@ phase5_frontend/
 - **Dark/light mode toggle** — persists preference in localStorage
 - **Fund filter** (sidebar) — max 3 funds at a time; populated dynamically from `GET /funds`; sends `fund_ids` with each query for per-fund retrieval
 - **Mobile bottom-sheet filter** — on small screens, fund selector opens as a modal bottom sheet with backdrop, "Done" action, and compact touch-first controls
+- **Compact mobile header** — hides non-essential meta lines (tagline/disclaimer/notices) on small screens so chat remains visible above the fold
 - **Fund mismatch warning** — client-side detection warns if query mentions a fund not selected in the filter
+- **No-fund send feedback** — send button stays actionable and returns an explicit message when no funds are selected
 - **Thinking indicator** — pulsing "Thinking... (Ns)" with elapsed seconds while waiting for response
 - **New Chat button** — clears the chat display
 - **Header notices** — AI disclaimer and free-tier usage note shown in top-right header area

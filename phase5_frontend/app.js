@@ -397,19 +397,30 @@ function runApp() {
       addMessage("bot", "Please select at least one fund (up to 3) from the filter.", { refused: true });
       return;
     }
-    var selectedNames = getSelectedFundNames(fundIds);
 
+    // Derive effective fund IDs: if the question clearly mentions a subset
+    // of the selected funds, scope the query (and answer label) to that subset.
     var mentioned = detectMentionedFundIds(message);
     var unselected = mentioned.filter(function (id) { return fundIds.indexOf(id) === -1; });
     if (unselected.length > 0) {
       var names = unselected.map(function (id) { return getFundNameById(id); });
+      var currentNames = getSelectedFundNames(fundIds);
       addMessage("bot",
         "Your question mentions " + names.join(", ") +
-        " which is not selected in the filter. Selected funds are: " + selectedNames.join(", ") + ". Please select the mentioned fund for accurate results.",
+        " which is not selected in the filter. Selected funds are: " + currentNames.join(", ") + ". Please select the mentioned fund for accurate results.",
         { refused: true }
       );
       return;
     }
+
+    var effectiveFundIds = fundIds;
+    if (mentioned.length > 0) {
+      var intersection = mentioned.filter(function (id) { return fundIds.indexOf(id) !== -1; });
+      if (intersection.length > 0) {
+        effectiveFundIds = intersection;
+      }
+    }
+    var selectedNames = getSelectedFundNames(effectiveFundIds);
 
     addMessage("user", message);
     closeMobileFundSheet();
@@ -419,7 +430,7 @@ function runApp() {
     showThinking();
 
     var body = { message: message };
-    if (fundIds) body.fund_ids = fundIds;
+    if (effectiveFundIds) body.fund_ids = effectiveFundIds;
 
     const url = getApiBase() + "/chat";
     fetch(url, {

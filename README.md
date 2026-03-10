@@ -43,7 +43,8 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed phase-wise architecture, d
 - **Dark/light theme** — toggle in header, preference persisted in localStorage; IndMoney logo auto-switches variant
 - **Thinking indicator** — pulsing timer shows elapsed seconds while waiting for a response
 - **New Chat button** — clears the chat display
-- **Mobile-first UX** — sticky header + composer, larger touch targets/typography, and a bottom-sheet fund selector with backdrop + "Done"
+- **Mobile-first UX** — compact mobile header, sticky composer, larger touch targets/typography, and a bottom-sheet fund selector with backdrop + "Done"
+- **No-fund send feedback** — `Send` remains clickable and shows an explicit "select at least one fund" message instead of silent blocking
 - **Stateless** — each query is independent; no conversation memory
 - **Dynamic response scaling** — multi-fund queries get one sentence per fund with scaled token limits; single-fund queries get ≤3 sentences
 
