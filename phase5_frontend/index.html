@@ -47,9 +47,8 @@
             <summary class="sidebar-summary">Filter by fund</summary>
             <div class="fund-filter" id="fund-filter">
               <p class="fund-filter-hint">Select one or more funds.</p>
-              <p class="fund-filter-scope-note">Only selected funds are used for retrieval and answers.</p>
               <div class="fund-checkbox-list" id="fund-checkbox-list">
-                <!-- Populated dynamically from /funds API -->
+                <!-- Select all + fund list populated dynamically from /funds API -->
               </div>
             </div>
           </details>
@@ -59,7 +58,6 @@
       <main class="main">
         <button type="button" id="open-funds-btn" class="open-funds-btn">Select funds (0)</button>
         <section class="welcome">
-          <p>Select fund(s) from the filter, then ask a question about them.</p>
           <div class="example-questions">
             <button type="button" class="example-btn" data-query="What is the NAV of HDFC Large Cap?">NAV of HDFC Large Cap?</button>
             <button type="button" class="example-btn" data-query="AUM of HDFC Flexi Cap Fund?">AUM of HDFC Flexi Cap?</button>
@@ -73,12 +71,10 @@
             <span class="selection-names" id="selection-names">No funds selected.</span>
           </div>
           <div id="messages" class="messages"></div>
-          <p class="input-scope-note" id="input-scope-note">Responses are based only on selected fund(s).</p>
           <form id="chat-form" class="input-row">
             <input
               id="message-input"
               type="text"
-              placeholder="Ask about the selected fund(s)..."
               autocomplete="off"
               aria-label="Your question"
             />

@@ -119,12 +119,36 @@ function _renderFundCheckboxes(funds, listEl) {
     return { id: f.id, name: f.name.replace(/ Direct (Plan )?Growth$/, "") };
   });
   listEl.innerHTML = "";
+
+  var selectAllLabel = document.createElement("label");
+  selectAllLabel.className = "fund-checkbox fund-checkbox-select-all";
+  var selectAllCb = document.createElement("input");
+  selectAllCb.type = "checkbox";
+  selectAllCb.className = "fund-cb fund-cb-select-all";
+  selectAllCb.value = "";
+  selectAllCb.checked = false;
+  selectAllCb.setAttribute("aria-label", "Select all funds");
+  var selectAllSpan = document.createElement("span");
+  selectAllSpan.textContent = "Select all funds";
+  selectAllLabel.appendChild(selectAllCb);
+  selectAllLabel.appendChild(selectAllSpan);
+  listEl.appendChild(selectAllLabel);
+
+  selectAllCb.addEventListener("change", function () {
+    var cbs = listEl.querySelectorAll(".fund-cb-fund");
+    for (var i = 0; i < cbs.length; i++) {
+      cbs[i].checked = selectAllCb.checked;
+    }
+    dismissFundWarnings();
+    if (_onFundSelectionChanged) _onFundSelectionChanged();
+  });
+
   funds.forEach(function (fund) {
     var label = document.createElement("label");
     label.className = "fund-checkbox";
     var cb = document.createElement("input");
     cb.type = "checkbox";
-    cb.className = "fund-cb";
+    cb.className = "fund-cb fund-cb-fund";
     cb.value = fund.id;
     cb.checked = false;
     var span = document.createElement("span");
@@ -136,11 +160,25 @@ function _renderFundCheckboxes(funds, listEl) {
     cb.addEventListener("change", function () {
       enforceFundLimit();
       dismissFundWarnings();
+      updateSelectAllState(listEl);
       if (_onFundSelectionChanged) _onFundSelectionChanged();
     });
   });
   enforceFundLimit();
   if (_onFundSelectionChanged) _onFundSelectionChanged();
+}
+
+function updateSelectAllState(listEl) {
+  if (!listEl) return;
+  var selectAllCb = listEl.querySelector(".fund-cb-select-all");
+  var fundCbs = listEl.querySelectorAll(".fund-cb-fund");
+  if (!selectAllCb || !fundCbs.length) return;
+  var checked = 0;
+  for (var i = 0; i < fundCbs.length; i++) {
+    if (fundCbs[i].checked) checked++;
+  }
+  selectAllCb.checked = checked === fundCbs.length;
+  selectAllCb.indeterminate = checked > 0 && checked < fundCbs.length;
 }
 
 function loadFundFilter() {
@@ -179,7 +217,7 @@ function dismissFundWarnings() {
 function getSelectedFundIds() {
   var listEl = document.getElementById("fund-checkbox-list");
   if (!listEl) return null;
-  var cbs = listEl.querySelectorAll(".fund-cb:checked");
+  var cbs = listEl.querySelectorAll(".fund-cb-fund:checked");
   var ids = [];
   for (var i = 0; i < cbs.length; i++) {
     ids.push(cbs[i].value);
@@ -234,9 +272,7 @@ function runApp() {
       renderSelectionNameChips(selectionNames, names);
     }
     if (input) {
-      input.placeholder = count === 0
-        ? "Select fund(s) first, then ask a question..."
-        : "Ask about the selected fund(s)...";
+      input.placeholder = "";
     }
     if (sendBtn) {
       // Keep send clickable so users get explicit feedback when no funds are selected.
