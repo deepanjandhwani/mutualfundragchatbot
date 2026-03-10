@@ -43,7 +43,6 @@ function loadDataLastUpdated() {
 
 /* ── Fund filter (multi-select checkboxes) ── */
 
-var MAX_FUND_SELECT = 3;
 var _fundKeywords = [];
 var _onFundSelectionChanged = null;
 
@@ -161,18 +160,7 @@ function loadFundFilter() {
 }
 
 function enforceFundLimit() {
-  var listEl = document.getElementById("fund-checkbox-list");
-  if (!listEl) return;
-  var cbs = listEl.querySelectorAll(".fund-cb");
-  var checkedCount = 0;
-  for (var i = 0; i < cbs.length; i++) {
-    if (cbs[i].checked) checkedCount++;
-  }
-  for (var i = 0; i < cbs.length; i++) {
-    if (!cbs[i].checked) {
-      cbs[i].disabled = checkedCount >= MAX_FUND_SELECT;
-    }
-  }
+  // No cap on number of funds; all checkboxes remain enabled.
 }
 
 function dismissFundWarnings() {
@@ -231,7 +219,7 @@ function runApp() {
 
   function updateFundButtonLabel(count) {
     if (!openFundsBtn) return;
-    openFundsBtn.textContent = "Select funds (" + count + "/" + MAX_FUND_SELECT + ")";
+    openFundsBtn.textContent = "Select funds (" + count + ")";
   }
 
   function updateSelectionStateUI() {
@@ -239,7 +227,7 @@ function runApp() {
     var names = getSelectedFundNames(ids);
     var count = ids.length;
     if (selectionChip) {
-      selectionChip.textContent = "Selected: " + count + "/" + MAX_FUND_SELECT;
+      selectionChip.textContent = "Selected: " + count;
       selectionChip.classList.toggle("zero", count === 0);
     }
     if (selectionNames) {
@@ -392,34 +380,23 @@ function runApp() {
     const message = (text || "").trim();
     if (!message) return;
 
-    var fundIds = getSelectedFundIds();
-    if (!fundIds || fundIds.length === 0) {
-      addMessage("bot", "Please select at least one fund (up to 3) from the filter.", { refused: true });
-      return;
-    }
-
-    // Derive effective fund IDs: if the question clearly mentions a subset
-    // of the selected funds, scope the query (and answer label) to that subset.
+    var fundIds = getSelectedFundIds() || [];
     var mentioned = detectMentionedFundIds(message);
-    var unselected = mentioned.filter(function (id) { return fundIds.indexOf(id) === -1; });
-    if (unselected.length > 0) {
-      var names = unselected.map(function (id) { return getFundNameById(id); });
-      var currentNames = getSelectedFundNames(fundIds);
-      addMessage("bot",
-        "Your question mentions " + names.join(", ") +
-        " which is not selected in the filter. Selected funds are: " + currentNames.join(", ") + ". Please select the mentioned fund for accurate results.",
-        { refused: true }
-      );
+
+    // Use funds mentioned in the question if any; otherwise use selected funds.
+    // This allows answering about a different fund than the one selected in the filter.
+    var effectiveFundIds = [];
+    if (mentioned.length > 0) {
+      effectiveFundIds = mentioned;
+    } else if (fundIds.length > 0) {
+      effectiveFundIds = fundIds;
+    }
+
+    if (effectiveFundIds.length === 0) {
+      addMessage("bot", "Please select at least one fund from the filter, or mention a fund in your question.", { refused: true });
       return;
     }
 
-    var effectiveFundIds = fundIds;
-    if (mentioned.length > 0) {
-      var intersection = mentioned.filter(function (id) { return fundIds.indexOf(id) !== -1; });
-      if (intersection.length > 0) {
-        effectiveFundIds = intersection;
-      }
-    }
     var selectedNames = getSelectedFundNames(effectiveFundIds);
 
     addMessage("user", message);

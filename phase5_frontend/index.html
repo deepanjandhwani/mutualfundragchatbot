@@ -46,7 +46,7 @@
           <details class="funds-details" id="funds-details">
             <summary class="sidebar-summary">Filter by fund</summary>
             <div class="fund-filter" id="fund-filter">
-              <p class="fund-filter-hint">Select up to 3 funds at a time.</p>
+              <p class="fund-filter-hint">Select one or more funds.</p>
               <p class="fund-filter-scope-note">Only selected funds are used for retrieval and answers.</p>
               <div class="fund-checkbox-list" id="fund-checkbox-list">
                 <!-- Populated dynamically from /funds API -->
@@ -57,7 +57,7 @@
       </aside>
 
       <main class="main">
-        <button type="button" id="open-funds-btn" class="open-funds-btn">Select funds (0/3)</button>
+        <button type="button" id="open-funds-btn" class="open-funds-btn">Select funds (0)</button>
         <section class="welcome">
           <p>Select fund(s) from the filter, then ask a question about them.</p>
           <div class="example-questions">
@@ -69,7 +69,7 @@
 
         <section class="chat" aria-live="polite">
           <div class="selection-summary" id="selection-summary">
-            <span class="selection-chip" id="selection-chip">Selected: 0/3</span>
+            <span class="selection-chip" id="selection-chip">Selected: 0</span>
             <span class="selection-names" id="selection-names">No funds selected.</span>
           </div>
           <div id="messages" class="messages"></div>
