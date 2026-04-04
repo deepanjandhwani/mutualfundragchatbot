@@ -132,7 +132,7 @@ On success, `shared/last_refresh.json` is written; the backend serves it via **G
 1. Push this repo to GitHub (include `phase3_embeddings/chroma_db/` and `.cache/` so the Docker image has embeddings data and the Hugging Face model).
 2. In [Render](https://render.com), create a **Blueprint** (or **New** → **Web Service**) and connect the repo. Use the included **`render.yaml`**, or create a **Docker** web service with root `Dockerfile` and context `.`.
 3. In the Render dashboard, open the service → **Environment** → add **`GEMINI_API_KEY`** (and optionally **`GEMINI_MODEL`**). Deploy.
-4. The default service name in `render.yaml` is **`mutualfundrag-backend`**, so the URL is **`https://mutualfundrag-backend.onrender.com`**. If you rename the service, update **`vercel.json`** (`rewrites` → `destination`) to match your Render URL.
+4. Your Render URL is **`https://<service-name>.onrender.com`**. Set **`vercel.json`** (`rewrites` → `destination`) to that host so `/api/*` proxies correctly (for example **`https://mutualfundragchatbot.onrender.com/:path*`**).
 5. **Free tier**: Instances spin down after idle (cold starts). The embedding model is baked into the repo under `.cache/`; if the build runs out of memory, switch the Render plan to **Starter** or higher.
 
 **Optional:** In Render → **Settings** → **Deploy Hook**, create a hook and add the URL as **`RENDER_DEPLOY_HOOK_URL`** in GitHub repo secrets. The workflow `.github/workflows/build-backend-image.yml` will POST to it after pushing a new image to GHCR (useful if you rely on hooks instead of Git auto-deploy).

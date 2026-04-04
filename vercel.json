@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://mutualfundrag-backend.onrender.com/:path*"
+      "destination": "https://mutualfundragchatbot.onrender.com/:path*"
     }
   ]
 }
