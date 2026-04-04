@@ -190,7 +190,7 @@ function loadFundFilter() {
   fetch(base + "/funds")
     .then(function (res) { return res.ok ? res.json() : []; })
     .then(function (funds) {
-      if (!funds || funds.length === 0) funds = _FALLBACK_FUNDS;
+      if (!Array.isArray(funds) || funds.length === 0) funds = _FALLBACK_FUNDS;
       _renderFundCheckboxes(funds, listEl);
     })
     .catch(function () {
@@ -254,6 +254,10 @@ function runApp() {
     if (!isMobileViewport()) return;
     document.body.classList.add("mobile-sheet-open");
     if (mobileSheetBackdrop) mobileSheetBackdrop.classList.remove("hidden");
+    // Mobile layout starts with <details> closed so only the summary shows; expand it
+    // when the sheet opens so the fund list is visible without a second tap.
+    var fundsDetails = document.getElementById("funds-details");
+    if (fundsDetails) fundsDetails.setAttribute("open", "");
   }
 
   function updateFundButtonLabel(count) {
