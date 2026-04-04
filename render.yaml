@@ -1,0 +1,17 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# After deploy, set GEMINI_API_KEY in the Render dashboard (Environment).
+# Default URL: https://mutualfundrag-backend.onrender.com — update vercel.json if you rename the service.
+services:
+  - type: web
+    name: mutualfundrag-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    branch: main
+    autoDeployTrigger: commit
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false

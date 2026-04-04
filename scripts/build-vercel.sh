@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build frontend for Vercel: inject API_BASE_URL into config and copy to public/.
 # For same-origin proxy (avoids DNS/CORS issues): set API_BASE_URL="/api" in Vercel env.
-# vercel.json rewrites /api/* to the Railway backend.
+# vercel.json rewrites /api/* to the Render backend.
 
 set -e
 API_BASE_URL="${API_BASE_URL:-/api}"

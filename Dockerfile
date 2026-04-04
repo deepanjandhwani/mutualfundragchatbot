@@ -1,4 +1,4 @@
-# Backend-only image for Railway. Uses requirements-railway.txt (no Playwright).
+# Backend-only image (Render, Railway, GHCR, etc.). Uses requirements-railway.txt (no Playwright).
 # Ensures deps layer is cached when only code changes.
 FROM python:3.11-slim
 
@@ -24,5 +24,5 @@ ENV PYTHONPATH=/app
 ENV HF_HOME=/app/.cache/huggingface
 EXPOSE 8000
 
-# Railway sets PORT at runtime
+# Render/Railway set PORT at runtime
 CMD ["sh", "-c", "uvicorn phase4_backend.app:app --host 0.0.0.0 --port ${PORT:-8000}"]

@@ -31,7 +31,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed phase-wise architecture, d
 - **LLM**: Google Gemini (`gemini-2.5-flash-lite`)
 - **Backend**: FastAPI
 - **Frontend**: Vanilla HTML/CSS/JS
-- **Deployment**: Vercel (frontend) + Railway (backend via GHCR Docker image)
+- **Deployment**: Vercel (frontend) + Render (backend Docker; see `render.yaml`)
 
 ## Features
 
@@ -123,30 +123,24 @@ On success, `shared/last_refresh.json` is written; the backend serves it via **G
 
 **GitHub Actions:** A workflow runs the scheduler **daily at 6 AM IST (00:30 UTC)** (see `.github/workflows/scheduler.yml`). You can also trigger it manually from the Actions tab. On success, updated ChromaDB and `last_refresh.json` are committed back to the repo, and the backend Docker image rebuild is triggered automatically.
 
-## Deployment: Backend on Railway, Frontend on Vercel
+## Deployment: Backend on Render, Frontend on Vercel
 
-**Why not Streamlit for the backend?** Streamlit hosts Streamlit apps (Python UIs), not REST APIs. The frontend is a static site that calls a backend API, so the backend is deployed as a web service (Railway) and the frontend as a static site (Vercel).
+**Why not Streamlit for the backend?** Streamlit hosts Streamlit apps (Python UIs), not REST APIs. The frontend is a static site that calls a backend API, so the backend is deployed as a web service (Render) and the frontend as a static site (Vercel).
 
-### Backend on Railway
+### Backend on Render
 
-**Railway free tier has a 5-minute build timeout.** The backend image (sentence-transformers + deps) often exceeds that, so builds can time out during “importing to docker”. Use the **pre-built image** (Option B) on the free tier, or upgrade to Hobby (20 min timeout) to build on Railway.
+1. Push this repo to GitHub (include `phase3_embeddings/chroma_db/` and `.cache/` so the Docker image has embeddings data and the Hugging Face model).
+2. In [Render](https://render.com), create a **Blueprint** (or **New** → **Web Service**) and connect the repo. Use the included **`render.yaml`**, or create a **Docker** web service with root `Dockerfile` and context `.`.
+3. In the Render dashboard, open the service → **Environment** → add **`GEMINI_API_KEY`** (and optionally **`GEMINI_MODEL`**). Deploy.
+4. The default service name in `render.yaml` is **`mutualfundrag-backend`**, so the URL is **`https://mutualfundrag-backend.onrender.com`**. If you rename the service, update **`vercel.json`** (`rewrites` → `destination`) to match your Render URL.
+5. **Free tier**: Instances spin down after idle (cold starts). The embedding model is baked into the repo under `.cache/`; if the build runs out of memory, switch the Render plan to **Starter** or higher.
 
-**Option B – Pre-built image (recommended on free tier; no timeout)**  
-1. The workflow `.github/workflows/build-backend-image.yml` builds the backend image and pushes it to **GitHub Container Registry** (GHCR) on pushes to `main` that touch backend code. Run it once (push to `main` or trigger manually in the Actions tab).  
-2. In [Railway](https://railway.app), create a **Web Service** → **Deploy from Docker image** (not “GitHub repo”). Image: `ghcr.io/<your-github-username>/mutualfundrag-backend:latest`.  
-3. Make the GHCR package public (or add a token in Railway so it can pull). In Railway **Variables**, add **GEMINI_API_KEY** (and optionally **GEMINI_MODEL**).  
-4. Deploys are pull + start only (no build on Railway, so no timeout). Re-run the workflow when you change backend code to refresh the image.
-
-**Option A – Build on Railway (needs Hobby or Pro if build &gt; 5 min)**  
-1. Push your repo to GitHub (include `phase3_embeddings/chroma_db/` and optionally `.cache/`).  
-2. In Railway, create a project, connect the repo, add a **Web Service**. Railway will use the **Dockerfile**.  
-3. Add **GEMINI_API_KEY** in the service **Variables**.  
-4. On the free tier the build may time out; on Hobby (20 min timeout) it should succeed.
+**Optional:** In Render → **Settings** → **Deploy Hook**, create a hook and add the URL as **`RENDER_DEPLOY_HOOK_URL`** in GitHub repo secrets. The workflow `.github/workflows/build-backend-image.yml` will POST to it after pushing a new image to GHCR (useful if you rely on hooks instead of Git auto-deploy).
 
 ### Frontend on Vercel
 
 1. In [Vercel](https://vercel.com), import the same GitHub repository.
 2. Set **API_BASE_URL** to `/api` (or leave unset; it defaults to `/api`). This uses Vercel rewrites to proxy API calls through your domain, avoiding cross-origin DNS issues (`ERR_NAME_NOT_RESOLVED`) for users.
 3. Deploy. The build runs `scripts/build-vercel.sh`, which injects `API_BASE_URL` and copies `phase5_frontend/` to `public/`. Set **Output Directory** to `public` if required.
-4. The deployed site serves the chat UI; `/api/chat`, `/api/funds`, `/api/meta` are proxied to the Railway backend via `vercel.json` rewrites.
+4. The deployed site serves the chat UI; `/api/chat`, `/api/funds`, `/api/meta` are proxied to the Render backend via `vercel.json` rewrites.
 

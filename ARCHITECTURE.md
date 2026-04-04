@@ -461,18 +461,16 @@ REFUSAL_COMPARE = "We don't compute or compare returns. Please check the fund pa
 
 | Component | Platform | Details |
 |-----------|----------|---------|
-| **Frontend** | [Vercel](https://vercel.com/) | Static HTML/CSS/JS served from `phase5_frontend/`. Auto-deploys on push to `main`. `API_BASE_URL` in `config.js` points to the Railway backend. |
-| **Backend** | [Railway](https://railway.app/) | Docker image from GHCR (`ghcr.io/<github-username>/mutualfundrag-backend:latest`). Environment variable `GEMINI_API_KEY` set in Railway dashboard. |
-| **Docker image** | [GHCR](https://ghcr.io/) | Built by `.github/workflows/build-backend-image.yml` on every push to `main`. After build, triggers Railway redeploy via GraphQL API. |
-| **CI/CD** | GitHub Actions | `scheduler.yml` runs daily data refresh → commits updated data → triggers `build-backend-image.yml` → GHCR push → Railway auto-redeploy. Fully automated. |
+| **Frontend** | [Vercel](https://vercel.com/) | Static HTML/CSS/JS served from `phase5_frontend/`. Auto-deploys on push to `main`. `API_BASE_URL` in `config.js` proxies to the Render backend via `vercel.json`. |
+| **Backend** | [Render](https://render.com/) | Docker web service from repo `Dockerfile` (see `render.yaml`). Environment variable `GEMINI_API_KEY` in Render dashboard. |
+| **Docker image** | [GHCR](https://ghcr.io/) | Built by `.github/workflows/build-backend-image.yml` on pushes to `main` that touch backend paths. Optional `RENDER_DEPLOY_HOOK_URL` triggers a Render deploy after push. |
+| **CI/CD** | GitHub Actions | `scheduler.yml` runs daily data refresh → commits updated data → can trigger `build-backend-image.yml` → GHCR push. Render can auto-deploy from Git on push. |
 
-### GitHub Secrets Required
+### GitHub Secrets (optional)
 
 | Secret | Purpose |
 |--------|---------|
-| `RAILWAY_API_TOKEN` | Triggers Railway redeploy after image build |
-| `RAILWAY_SERVICE_ID` | Identifies the Railway service to redeploy |
-| `RAILWAY_ENVIRONMENT_ID` | Identifies the Railway environment |
+| `RENDER_DEPLOY_HOOK_URL` | POST after GHCR build to trigger a Render deploy (if you use a deploy hook) |
 
 ---
 
@@ -486,7 +484,7 @@ REFUSAL_COMPARE = "We don't compute or compare returns. Please check the fund pa
 | Backend | FastAPI |
 | Frontend | Vanilla HTML/CSS/JS |
 | Scheduler | GitHub Actions (daily cron) |
-| Deployment | Vercel (frontend) + Railway (backend via GHCR Docker image) |
+| Deployment | Vercel (frontend) + Render (backend Docker; `render.yaml`) |
 | Python | 3.10+ |
 
 ---
