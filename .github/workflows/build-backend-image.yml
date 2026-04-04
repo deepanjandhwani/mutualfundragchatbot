@@ -1,6 +1,8 @@
-# Build backend Docker image, push to GHCR, then optionally trigger a Render deploy.
-# Optional GitHub repo secret (Render dashboard → your service → Settings → Deploy Hook):
-#   RENDER_DEPLOY_HOOK_URL — POST triggers a fresh deploy (if you use a deploy hook instead of Git auto-deploy)
+# Build backend Docker image, push to GHCR, then trigger Railway redeploy (optional secrets).
+# Required for Railway auto-redeploy after GHCR push:
+#   RAILWAY_API_TOKEN      — Railway account token (Settings → Tokens → Create Token)
+#   RAILWAY_SERVICE_ID     — Service ID (service Settings → URL or General tab)
+#   RAILWAY_ENVIRONMENT_ID — Environment ID (often "production"; Railway CLI or API)
 name: Build backend image
 
 on:
@@ -40,14 +42,13 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/mutualfundrag-backend:latest
             ghcr.io/${{ github.repository_owner }}/mutualfundrag-backend:${{ github.sha }}
 
-      - name: Trigger Render deploy hook
-        if: success()
-        env:
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+      - name: Trigger Railway redeploy
+        if: success() && secrets.RAILWAY_API_TOKEN != '' && secrets.RAILWAY_SERVICE_ID != '' && secrets.RAILWAY_ENVIRONMENT_ID != ''
         run: |
-          if [ -z "${RENDER_DEPLOY_HOOK_URL:-}" ]; then
-            echo "RENDER_DEPLOY_HOOK_URL not set; skipping (Render can auto-deploy from Git on push)."
-            exit 0
-          fi
-          curl -sS -X POST "$RENDER_DEPLOY_HOOK_URL"
-          echo "Render deploy hook triggered"
+          curl -sS -X POST "https://backboard.railway.app/graphql/v2" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_API_TOKEN }}" \
+            -d '{
+              "query": "mutation { serviceInstanceRedeploy(environmentId: \"${{ secrets.RAILWAY_ENVIRONMENT_ID }}\", serviceId: \"${{ secrets.RAILWAY_SERVICE_ID }}\") }"
+            }'
+          echo "Railway redeploy triggered"

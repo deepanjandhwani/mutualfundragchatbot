@@ -461,16 +461,18 @@ REFUSAL_COMPARE = "We don't compute or compare returns. Please check the fund pa
 
 | Component | Platform | Details |
 |-----------|----------|---------|
-| **Frontend** | [Vercel](https://vercel.com/) | Static HTML/CSS/JS served from `phase5_frontend/`. Auto-deploys on push to `main`. `API_BASE_URL` in `config.js` proxies to the Render backend via `vercel.json`. |
-| **Backend** | [Render](https://render.com/) | Docker web service from repo `Dockerfile` (see `render.yaml`). Environment variable `GEMINI_API_KEY` in Render dashboard. |
-| **Docker image** | [GHCR](https://ghcr.io/) | Built by `.github/workflows/build-backend-image.yml` on pushes to `main` that touch backend paths. Optional `RENDER_DEPLOY_HOOK_URL` triggers a Render deploy after push. |
-| **CI/CD** | GitHub Actions | `scheduler.yml` runs daily data refresh → commits updated data → can trigger `build-backend-image.yml` → GHCR push. Render can auto-deploy from Git on push. |
+| **Frontend** | [Vercel](https://vercel.com/) | Static HTML/CSS/JS served from `phase5_frontend/`. Auto-deploys on push to `main`. `API_BASE_URL` in `config.js` proxies to the Railway backend via `vercel.json` or direct origin. |
+| **Backend** | [Railway](https://railway.app/) | Docker web service from repo `Dockerfile`. Environment variable `GEMINI_API_KEY` in Railway dashboard. |
+| **Docker image** | [GHCR](https://ghcr.io/) | Built by `.github/workflows/build-backend-image.yml` on pushes to `main` that touch backend paths. Optional Railway secrets trigger redeploy after push. |
+| **CI/CD** | GitHub Actions | `scheduler.yml` runs daily data refresh → commits updated data → can trigger `build-backend-image.yml` → GHCR push. Railway can auto-deploy from Git on push. |
 
-### GitHub Secrets (optional)
+### GitHub Secrets (optional, Railway redeploy after GHCR push)
 
 | Secret | Purpose |
 |--------|---------|
-| `RENDER_DEPLOY_HOOK_URL` | POST after GHCR build to trigger a Render deploy (if you use a deploy hook) |
+| `RAILWAY_API_TOKEN` | Railway account token for GraphQL redeploy |
+| `RAILWAY_SERVICE_ID` | Target service ID |
+| `RAILWAY_ENVIRONMENT_ID` | Target environment ID (often production) |
 
 ---
 
@@ -484,7 +486,7 @@ REFUSAL_COMPARE = "We don't compute or compare returns. Please check the fund pa
 | Backend | FastAPI |
 | Frontend | Vanilla HTML/CSS/JS |
 | Scheduler | GitHub Actions (daily cron) |
-| Deployment | Vercel (frontend) + Render (backend Docker; `render.yaml`) |
+| Deployment | Vercel (frontend) + Railway (backend Docker) |
 | Python | 3.10+ |
 
 ---

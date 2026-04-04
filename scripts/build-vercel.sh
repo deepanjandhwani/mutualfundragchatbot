@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Build frontend for Vercel: inject API_BASE_URL into config and copy to public/.
 # Vercel env API_BASE_URL:
-#   - https://YOUR-SERVICE.onrender.com — direct to Render (recommended; avoids proxy 502 on long cold starts)
-#   - /api — same-origin; vercel.json rewrites /api/* to Render
+#   - https://YOUR-SERVICE.up.railway.app — direct to Railway (recommended; avoids proxy 502 on long cold starts)
+#   - /api — same-origin; vercel.json rewrites /api/* to Railway
 
 set -e
 API_BASE_URL="${API_BASE_URL:-/api}"

@@ -31,7 +31,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed phase-wise architecture, d
 - **LLM**: Google Gemini (`gemini-2.5-flash-lite`)
 - **Backend**: FastAPI
 - **Frontend**: Vanilla HTML/CSS/JS
-- **Deployment**: Vercel (frontend) + Render (backend Docker; see `render.yaml`)
+- **Deployment**: Vercel (frontend) + Railway (backend Docker)
 
 ## Features
 
@@ -123,44 +123,37 @@ On success, `shared/last_refresh.json` is written; the backend serves it via **G
 
 **GitHub Actions:** A workflow runs the scheduler **daily at 6 AM IST (00:30 UTC)** (see `.github/workflows/scheduler.yml`). You can also trigger it manually from the Actions tab. On success, updated ChromaDB and `last_refresh.json` are committed back to the repo, and the backend Docker image rebuild is triggered automatically.
 
-## Deployment: Backend on Render, Frontend on Vercel
+## Deployment: Backend on Railway, Frontend on Vercel
 
-**Why not Streamlit for the backend?** Streamlit hosts Streamlit apps (Python UIs), not REST APIs. The frontend is a static site that calls a backend API, so the backend is deployed as a web service (Render) and the frontend as a static site (Vercel).
+**Why not Streamlit for the backend?** Streamlit hosts Streamlit apps (Python UIs), not REST APIs. The frontend is a static site that calls a backend API, so the backend is deployed as a web service ([Railway](https://railway.app)) and the frontend as a static site ([Vercel](https://vercel.com)).
 
-### Backend on Render
+### Backend on Railway
 
-1. Push this repo to GitHub (include `phase3_embeddings/chroma_db/` and `.cache/` so the Docker image has embeddings data and the Hugging Face model).
-2. In [Render](https://render.com), create a **Blueprint** (or **New** → **Web Service**) and connect the repo. Use the included **`render.yaml`**, or create a **Docker** web service with root `Dockerfile` and context `.`.
-3. In the Render dashboard, open the service → **Environment** → add **`GEMINI_API_KEY`** (and optionally **`GEMINI_MODEL`**). Deploy.
-4. Your Render URL is **`https://<service-name>.onrender.com`**. Set **`vercel.json`** (`rewrites` → `destination`) to that host so `/api/*` proxies correctly (for example **`https://mutualfundragchatbot.onrender.com/:path*`**).
-5. **Free tier**: Instances spin down after idle (cold starts). The embedding model is baked into the repo under `.cache/`.
-6. **Out of memory (512MB):** If Render shows *“Ran out of memory (used over 512MB)”*, the **free** web service only has **512 MB RAM**. Sentence Transformers + PyTorch + Chroma usually need **about 1–2 GB** at runtime. In Render → your service → **Settings** → **Instance type** / **Plan**, upgrade to **Standard** (typically **2 GB RAM**) or another paid tier with **≥1 GB**. Thread limits in the Dockerfile reduce spikes slightly but do not replace more RAM.
+1. Push this repo to GitHub (include `phase3_embeddings/chroma_db/` and `.cache/` so the Docker image has Chroma data and the Hugging Face model).
+2. In [Railway](https://railway.app), create a **New Project** → **Deploy from GitHub repo** → select this repository, or **Empty project** → **New** → **GitHub Repo**.
+3. Railway should detect the **`Dockerfile`** at the repo root. Set **Root Directory** to `/` if asked. Add a **public HTTP** port (Railway sets **`PORT`**; the image uses it automatically).
+4. In **Variables**, add **`GEMINI_API_KEY`** (and optionally **`GEMINI_MODEL`**). Deploy.
+5. Open the service → **Settings** → **Networking** → **Generate domain** to get a URL like **`https://mutualfundrag-backend-production.up.railway.app`** (yours may differ).
+6. Copy that URL into **`vercel.json`** (`rewrites` → `destination`) so `/api/*` proxies to Railway, and/or set Vercel **`API_BASE_URL`** to the same origin (see below).
+7. **RAM:** The default **Hobby** tier may be tight for PyTorch + sentence-transformers + Chroma. If the service **OOMs**, increase memory in Railway **Settings** → **Resources** (or upgrade plan). This stack usually needs **about 1–2 GB** for a stable runtime.
 
-**Optional:** In Render → **Settings** → **Deploy Hook**, create a hook and add the URL as **`RENDER_DEPLOY_HOOK_URL`** in GitHub repo secrets. The workflow `.github/workflows/build-backend-image.yml` will POST to it after pushing a new image to GHCR (useful if you rely on hooks instead of Git auto-deploy).
+**Pre-built image (optional, avoids long Docker builds on Railway’s free tier):**  
+The workflow `.github/workflows/build-backend-image.yml` pushes **`ghcr.io/<your-github-username>/mutualfundrag-backend:latest`**. In Railway, create a service → **Deploy from Docker image** → image URL as above (make the GHCR package public or add a registry token). Add **`GEMINI_API_KEY`** in Variables.
+
+**Auto-redeploy after GHCR push:** Add GitHub repository secrets **`RAILWAY_API_TOKEN`**, **`RAILWAY_SERVICE_ID`**, **`RAILWAY_ENVIRONMENT_ID`** (see [Railway API](https://docs.railway.app/guides/public-api) / dashboard). The workflow triggers a redeploy after each image push.
 
 ### Frontend on Vercel
 
 1. In [Vercel](https://vercel.com), import the same GitHub repository.
 2. Set **`API_BASE_URL`** in the Vercel project **Environment Variables** (Production):
-   - **Recommended:** `https://mutualfundragchatbot.onrender.com` (your Render service URL, **no** trailing slash). The browser calls the API **directly**. CORS on the FastAPI app allows this and avoids **Vercel’s ~60s proxy timeout**, which often surfaces as **502** when Render is cold and the first chat is slow.
-   - **Alternative:** `/api` (default if unset) so requests go through **`vercel.json` rewrites** to Render (same-origin). Simpler DNS-wise, but long cold starts + LLM time can hit the proxy limit and return **502**.
+   - **Recommended:** `https://YOUR-SERVICE.up.railway.app` (your Railway **public URL**, **no** trailing slash). The browser calls the API **directly**. CORS on the FastAPI app allows this and avoids **Vercel’s ~60s proxy timeout**, which can surface as **502** when the backend is cold and the first chat is slow.
+   - **Alternative:** `/api` (default if unset) so requests go through **`vercel.json` rewrites** to Railway (same-origin). Simpler DNS-wise, but long cold starts + LLM time can hit the proxy limit and return **502**.
 3. Deploy. The build runs `scripts/build-vercel.sh`, which injects `API_BASE_URL` and copies `phase5_frontend/` to `public/`. Set **Output Directory** to `public` if required.
-4. The deployed site serves the chat UI. With **`/api`**, routes are proxied to Render via `vercel.json`. With a **full Render URL**, the UI talks to Render without that hop.
+4. The deployed site serves the chat UI. With **`/api`**, routes are proxied to Railway via `vercel.json`. With a **full Railway URL**, the UI talks to Railway without that hop.
 
-**502 on chat:** Usually proxy timeout (use direct **`API_BASE_URL`** as above) or Render still waking—wait and retry; the UI also retries 5xx a few times automatically.
+**502 on chat:** Usually proxy timeout (use direct **`API_BASE_URL`** as above) or the Railway service still starting—wait and retry; the UI also retries 5xx a few times automatically.
 
-### Keep Render warm (cron)
+### Keep the backend warm (optional cron)
 
-Render’s **free** web services often **spin down after ~15 minutes** without traffic. A scheduled **HTTP GET** to **`/health`** keeps the instance warm so users avoid long cold starts.
-
-Use an external cron (e.g. **[cron-job.org](https://console.cron-job.org/)**):
-
-1. Sign in at [console.cron-job.org](https://console.cron-job.org/) and create a **cronjob**.
-2. **URL:** `https://mutualfundragchatbot.onrender.com/health` (replace with your Render service host if different).
-3. **Request method:** `GET` (default).
-4. **Schedule:** every **10–14 minutes** (stay under the idle window; 10 minutes is safe).
-5. **Timeout:** set high enough for a cold start if the service was sleeping (e.g. **120–180 seconds**), or the first ping after idle may fail while still waking the dyno—that’s OK if later pings succeed.
-6. Save and enable the job. Check **History** / execution logs after a few runs.
-
-**Alternatives:** [UptimeRobot](https://uptimerobot.com) HTTP monitors, or a Render **paid** plan (always-on).
+If the Railway service idles and cold starts are slow, schedule an HTTP **GET** to **`https://YOUR-RAILWAY-URL/health`** every **10–15 minutes** (e.g. [cron-job.org](https://console.cron-job.org/), [UptimeRobot](https://uptimerobot.com)). Use a **timeout** of **120–180 seconds** on the first ping after long idle.
 
