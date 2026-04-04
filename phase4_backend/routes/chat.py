@@ -15,8 +15,12 @@ from phase4_backend.rag.retriever import retrieve, detect_mentioned_funds
 from phase4_backend.rag.prompt_builder import SYSTEM_PROMPT, build_user_prompt
 from phase4_backend.rag.response_formatter import format_sources, ensure_last_updated_suffix
 from phase4_backend import config
+from phase4_backend.warmup import wait_until_ready
 
 log = logging.getLogger(__name__)
+
+# Stay under typical reverse-proxy timeouts (e.g. Vercel ~60s to origin); then ask user to retry.
+_WARMUP_WAIT_S = 45.0
 router = APIRouter()
 
 _gemini_executor = ThreadPoolExecutor(max_workers=2)
@@ -113,6 +117,17 @@ def _effective_top_k(base_top_k: int, fund_ids: list[str] | None) -> int:
 def chat(request: ChatRequest) -> ChatResponse:
     t_start = time.perf_counter()
     message = (request.message or "").strip()
+
+    if not wait_until_ready(timeout=_WARMUP_WAIT_S):
+        return ChatResponse(
+            answer=(
+                "The server is still loading the embedding model (typical on free hosting after idle). "
+                "Wait 30–60 seconds and send your message again."
+            ),
+            sources=[],
+            refused=False,
+            refusal_reason=None,
+        )
 
     # 1) PII check
     valid, refusal = validate_user_message(message)

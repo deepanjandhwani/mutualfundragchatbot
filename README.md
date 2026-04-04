@@ -140,7 +140,11 @@ On success, `shared/last_refresh.json` is written; the backend serves it via **G
 ### Frontend on Vercel
 
 1. In [Vercel](https://vercel.com), import the same GitHub repository.
-2. Set **API_BASE_URL** to `/api` (or leave unset; it defaults to `/api`). This uses Vercel rewrites to proxy API calls through your domain, avoiding cross-origin DNS issues (`ERR_NAME_NOT_RESOLVED`) for users.
+2. Set **`API_BASE_URL`** in the Vercel project **Environment Variables** (Production):
+   - **Recommended:** `https://mutualfundragchatbot.onrender.com` (your Render service URL, **no** trailing slash). The browser calls the API **directly**. CORS on the FastAPI app allows this and avoids **Vercel’s ~60s proxy timeout**, which often surfaces as **502** when Render is cold and the first chat is slow.
+   - **Alternative:** `/api` (default if unset) so requests go through **`vercel.json` rewrites** to Render (same-origin). Simpler DNS-wise, but long cold starts + LLM time can hit the proxy limit and return **502**.
 3. Deploy. The build runs `scripts/build-vercel.sh`, which injects `API_BASE_URL` and copies `phase5_frontend/` to `public/`. Set **Output Directory** to `public` if required.
-4. The deployed site serves the chat UI; `/api/chat`, `/api/funds`, `/api/meta` are proxied to the Render backend via `vercel.json` rewrites.
+4. The deployed site serves the chat UI. With **`/api`**, routes are proxied to Render via `vercel.json`. With a **full Render URL**, the UI talks to Render without that hop.
+
+**502 on chat:** Usually proxy timeout (use direct **`API_BASE_URL`** as above) or Render still waking—wait and retry; the UI also retries 5xx a few times automatically.
 

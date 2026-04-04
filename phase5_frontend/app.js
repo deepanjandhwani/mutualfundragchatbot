@@ -453,11 +453,33 @@ function runApp() {
     if (effectiveFundIds) body.fund_ids = effectiveFundIds;
 
     const url = getApiBase() + "/chat";
-    fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    })
+    var bodyStr = JSON.stringify(body);
+
+    function fetchChatAttempt(attemptNum) {
+      return fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: bodyStr,
+      }).then(function (res) {
+        if (res.status >= 500 && res.status < 600 && attemptNum < 3) {
+          var dot = _thinkingEl && _thinkingEl.querySelector(".thinking-content");
+          if (dot) {
+            dot.textContent =
+              "Server waking up (free tier can take a minute). Retrying… (" +
+              (attemptNum + 1) +
+              "/3)";
+          }
+          return new Promise(function (resolve, reject) {
+            setTimeout(function () {
+              fetchChatAttempt(attemptNum + 1).then(resolve).catch(reject);
+            }, 7000);
+          });
+        }
+        return res;
+      });
+    }
+
+    fetchChatAttempt(1)
       .then(function (res) {
         if (!res.ok) throw new Error("Request failed: " + res.status);
         return res.json();

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Build frontend for Vercel: inject API_BASE_URL into config and copy to public/.
-# For same-origin proxy (avoids DNS/CORS issues): set API_BASE_URL="/api" in Vercel env.
-# vercel.json rewrites /api/* to the Render backend.
+# Vercel env API_BASE_URL:
+#   - https://YOUR-SERVICE.onrender.com — direct to Render (recommended; avoids proxy 502 on long cold starts)
+#   - /api — same-origin; vercel.json rewrites /api/* to Render
 
 set -e
 API_BASE_URL="${API_BASE_URL:-/api}"

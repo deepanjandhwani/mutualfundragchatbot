@@ -20,6 +20,7 @@ from fastapi.responses import RedirectResponse
 
 from phase4_backend.routes.chat import router as chat_router
 from phase4_backend.routes.meta import router as meta_router
+from phase4_backend.warmup import is_ready, start_background_warmup
 
 log = logging.getLogger(__name__)
 
@@ -31,17 +32,9 @@ app = FastAPI(
 
 
 @app.on_event("startup")
-def _warmup():
-    """Preload embedding model + ChromaDB at startup so first request isn't slow."""
-    from phase4_backend import config
-    from phase3_embeddings.embedder import get_embedding_model
-    from phase3_embeddings.chroma_client import get_client, get_or_create_collection
-    log.info("Warming up embedding model...")
-    get_embedding_model(config.EMBEDDING_MODEL_NAME)
-    log.info("Warming up ChromaDB connection...")
-    client = get_client(config.CHROMA_PERSIST_DIR)
-    get_or_create_collection(client, config.COLLECTION_NAME)
-    log.info("Warmup complete.")
+def _start_warmup():
+    """Load embedding model + Chroma in a background thread so the server listens immediately."""
+    start_background_warmup()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -63,5 +56,6 @@ def root():
 def health():
     return {
         "status": "ok",
+        "ready": is_ready(),
         "gemini_configured": bool(os.getenv("GEMINI_API_KEY", "").strip()),
     }
