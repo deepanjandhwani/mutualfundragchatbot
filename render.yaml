@@ -1,6 +1,9 @@
 # Render Blueprint: https://render.com/docs/blueprint-spec
 # After deploy, set GEMINI_API_KEY in the Render dashboard (Environment).
 # Public URL is https://<service-name>.onrender.com — keep vercel.json rewrites in sync.
+#
+# RAM: Free tier = 512MB — this app often OOMs (PyTorch + embeddings + Chroma). In the
+# Render dashboard → Settings → change instance type to Standard (2GB) or similar (paid).
 services:
   - type: web
     name: mutualfundrag-backend

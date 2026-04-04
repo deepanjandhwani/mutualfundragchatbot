@@ -39,6 +39,9 @@ def get_embedding_model(model_name: str):
     """Load and cache the sentence-transformers model. Uses local cache when present to avoid network."""
     global _model
     if _model is None:
+        import torch
+        torch.set_num_threads(1)
+        torch.set_num_interop_threads(1)
         from sentence_transformers import SentenceTransformer
         cache_dir = Path(_CACHE_DIR)
         cache_dir.mkdir(parents=True, exist_ok=True)
@@ -75,5 +78,10 @@ def encode(texts: List[str], model_name: str) -> List[List[float]]:
     if not texts:
         return []
     model = get_embedding_model(model_name)
-    embeddings = model.encode(texts, show_progress_bar=len(texts) > 10)
+    # Small batches reduce peak RAM (important on 512MB hosts).
+    embeddings = model.encode(
+        texts,
+        show_progress_bar=len(texts) > 10,
+        batch_size=min(8, max(1, len(texts))),
+    )
     return embeddings.tolist()

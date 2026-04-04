@@ -22,6 +22,12 @@ COPY .cache ./.cache
 
 ENV PYTHONPATH=/app
 ENV HF_HOME=/app/.cache/huggingface
+# Keep BLAS/PyTorch thread pools small to reduce RAM spikes (512MB free tier often OOMs without this).
+ENV OMP_NUM_THREADS=1
+ENV OPENBLAS_NUM_THREADS=1
+ENV MKL_NUM_THREADS=1
+ENV NUMEXPR_NUM_THREADS=1
+ENV TOKENIZERS_PARALLELISM=false
 EXPOSE 8000
 
 # Render/Railway set PORT at runtime

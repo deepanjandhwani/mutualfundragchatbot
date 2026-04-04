@@ -133,7 +133,8 @@ On success, `shared/last_refresh.json` is written; the backend serves it via **G
 2. In [Render](https://render.com), create a **Blueprint** (or **New** → **Web Service**) and connect the repo. Use the included **`render.yaml`**, or create a **Docker** web service with root `Dockerfile` and context `.`.
 3. In the Render dashboard, open the service → **Environment** → add **`GEMINI_API_KEY`** (and optionally **`GEMINI_MODEL`**). Deploy.
 4. Your Render URL is **`https://<service-name>.onrender.com`**. Set **`vercel.json`** (`rewrites` → `destination`) to that host so `/api/*` proxies correctly (for example **`https://mutualfundragchatbot.onrender.com/:path*`**).
-5. **Free tier**: Instances spin down after idle (cold starts). The embedding model is baked into the repo under `.cache/`; if the build runs out of memory, switch the Render plan to **Starter** or higher.
+5. **Free tier**: Instances spin down after idle (cold starts). The embedding model is baked into the repo under `.cache/`.
+6. **Out of memory (512MB):** If Render shows *“Ran out of memory (used over 512MB)”*, the **free** web service only has **512 MB RAM**. Sentence Transformers + PyTorch + Chroma usually need **about 1–2 GB** at runtime. In Render → your service → **Settings** → **Instance type** / **Plan**, upgrade to **Standard** (typically **2 GB RAM**) or another paid tier with **≥1 GB**. Thread limits in the Dockerfile reduce spikes slightly but do not replace more RAM.
 
 **Optional:** In Render → **Settings** → **Deploy Hook**, create a hook and add the URL as **`RENDER_DEPLOY_HOOK_URL`** in GitHub repo secrets. The workflow `.github/workflows/build-backend-image.yml` will POST to it after pushing a new image to GHCR (useful if you rely on hooks instead of Git auto-deploy).
 
