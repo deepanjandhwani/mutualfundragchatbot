@@ -148,3 +148,18 @@ On success, `shared/last_refresh.json` is written; the backend serves it via **G
 
 **502 on chat:** Usually proxy timeout (use direct **`API_BASE_URL`** as above) or Render still waking—wait and retry; the UI also retries 5xx a few times automatically.
 
+### Keep Render warm (cron)
+
+Render’s **free** web services often **spin down after ~15 minutes** without traffic. A scheduled **HTTP GET** to **`/health`** keeps the instance warm so users avoid long cold starts.
+
+Use an external cron (e.g. **[cron-job.org](https://console.cron-job.org/)**):
+
+1. Sign in at [console.cron-job.org](https://console.cron-job.org/) and create a **cronjob**.
+2. **URL:** `https://mutualfundragchatbot.onrender.com/health` (replace with your Render service host if different).
+3. **Request method:** `GET` (default).
+4. **Schedule:** every **10–14 minutes** (stay under the idle window; 10 minutes is safe).
+5. **Timeout:** set high enough for a cold start if the service was sleeping (e.g. **120–180 seconds**), or the first ping after idle may fail while still waking the dyno—that’s OK if later pings succeed.
+6. Save and enable the job. Check **History** / execution logs after a few runs.
+
+**Alternatives:** [UptimeRobot](https://uptimerobot.com) HTTP monitors, or a Render **paid** plan (always-on).
+
